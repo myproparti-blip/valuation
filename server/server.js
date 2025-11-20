@@ -34,17 +34,30 @@ const io = new Server(httpServer, {
 // Setup Socket.io events
 setupChatEvents(io);
 
-// Connect to Database (non-blocking)
-connectDB().catch(err => {
-  console.error("Initial DB Connection Error:", err);
-});
+// Connect to Database with retry logic
+let dbConnectionAttempts = 0;
+const maxRetries = 5;
+const connectWithRetry = async () => {
+  try {
+    await connectDB();
+  } catch (err) {
+    dbConnectionAttempts++;
+    if (dbConnectionAttempts < maxRetries) {
+      console.error(`DB Connection attempt ${dbConnectionAttempts} failed. Retrying in 5 seconds...`);
+      setTimeout(connectWithRetry, 5000);
+    } else {
+      console.error("Max DB connection retries reached. Server will attempt per-request connection.");
+    }
+  }
+};
+connectWithRetry();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware to ensure database connection
+// Middleware to ensure database connection before processing requests
 app.use(async (req, res, next) => {
   try {
     // Ensure connection is established before processing request
@@ -54,8 +67,10 @@ app.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Database connection failed for request:", error.message);
-    // Continue anyway - let the route handler deal with DB errors
-    next();
+    res.status(503).json({ 
+      message: "Database connection unavailable", 
+      error: "Service temporarily unavailable" 
+    });
   }
 });
 

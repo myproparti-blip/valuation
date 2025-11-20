@@ -24,7 +24,7 @@ export const createFile = async (req, res) => {
             { uniqueId: req.body.uniqueId },
             fileData,
             { upsert: true, new: true }
-        );
+        ).maxTimeMS(30000);
 
         // Also create/update valuation record
         const valuationData = {
@@ -38,7 +38,7 @@ export const createFile = async (req, res) => {
             { uniqueId: req.body.uniqueId },
             valuationData,
             { upsert: true, new: true }
-        );
+        ).maxTimeMS(30000);
 
         res.status(201).json({
             message: "Valuation form submitted successfully",
@@ -204,14 +204,14 @@ export const updateFileStatus = async (req, res) => {
             id,
             updateData,
             { new: true, runValidators: true }
-        );
+        ).maxTimeMS(30000);
 
         // Also update valuation record
         await ValuationModel.findOneAndUpdate(
             { uniqueId: updatedFile.uniqueId },
             updateData,
             { new: true, runValidators: true }
-        );
+        ).maxTimeMS(30000);
 
 
 

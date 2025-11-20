@@ -19,13 +19,8 @@ export const createValuation = async (req, res) => {
             lastUpdatedByRole: requestUser.role
         };
 
-        // Create with timeout
-        const newVal = await Promise.race([
-            ValuationModel.create(data),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Database operation timeout")), 30000)
-            )
-        ]);
+        // Create valuation
+        const newVal = await ValuationModel.create(data);
 
         // Also create file record using upsert to avoid duplicate key error
         const fileData = {
@@ -37,16 +32,11 @@ export const createValuation = async (req, res) => {
         };
         
         try {
-            await Promise.race([
-                File.updateOne(
-                    { uniqueId: fileData.uniqueId },
-                    { $set: fileData },
-                    { upsert: true }
-                ),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("File database operation timeout")), 30000)
-                )
-            ]);
+            await File.updateOne(
+                { uniqueId: fileData.uniqueId },
+                { $set: fileData },
+                { upsert: true }
+            );
         } catch (fileErr) {
             console.error("File creation error (non-blocking):", fileErr.message);
             // Don't fail the main request if file creation fails
@@ -353,13 +343,13 @@ export const updateValuation = async (req, res) => {
             { uniqueId: id },
             updatePayload,
             { new: true, runValidators: true }
-        );
+        ).maxTimeMS(30000);
 
         // Also update file record
         await File.findOneAndUpdate(
             { uniqueId: id },
             updatePayload
-        );
+        ).maxTimeMS(30000);
 
         const statusMessage = existingValuation.status === "rejected"
             ? "Valuation resubmitted successfully and status changed to 'Pending Review'"
@@ -436,7 +426,7 @@ export const managerSubmit = async (req, res) => {
                 updatedAt: new Date()
             },
             { new: true, runValidators: true }
-        );
+        ).maxTimeMS(30000);
 
         // Also update file record
         const updatedFile = await File.findOneAndUpdate(
@@ -451,7 +441,7 @@ export const managerSubmit = async (req, res) => {
                 updatedAt: new Date()
             },
             { new: true, runValidators: true }
-        );
+        ).maxTimeMS(30000);
 
         const statusMessage = status === "approved"
             ? "Form approved successfully"

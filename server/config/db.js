@@ -17,15 +17,17 @@ const connectDB = async () => {
   isConnecting = true;
 
   connectionPromise = mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 10000,
-    socketTimeoutMS: 60000,
-    connectTimeoutMS: 10000,
-    maxPoolSize: 5,
-    minPoolSize: 1,
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 120000,
+    connectTimeoutMS: 30000,
+    maxPoolSize: 10,
+    minPoolSize: 2,
+    maxConnecting: 10,
     retryWrites: true,
     w: "majority",
-    retryWrites: true,
-    maxConnecting: 5
+    family: 4,
+    bufferCommands: false,
+    autoCreate: true
   });
 
   try {

@@ -2,10 +2,12 @@ import mongoose from "mongoose";
 
 let isConnecting = false;
 let connectionPromise = null;
+let connectionAttempts = 0;
 
 const connectDB = async () => {
   // If already connected, return immediately
   if (mongoose.connection.readyState === 1) {
+    connectionAttempts = 0;
     return mongoose;
   }
 
@@ -15,6 +17,7 @@ const connectDB = async () => {
   }
 
   isConnecting = true;
+  connectionAttempts++;
 
   connectionPromise = mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 30000,
@@ -26,19 +29,20 @@ const connectDB = async () => {
     retryWrites: true,
     w: "majority",
     family: 4,
-    bufferCommands: false,
+    bufferCommands: true,
     autoCreate: true
   });
 
   try {
     await connectionPromise;
     isConnecting = false;
+    connectionAttempts = 0;
     console.log("MongoDB connected successfully");
     return mongoose;
   } catch (error) {
     isConnecting = false;
     connectionPromise = null;
-    console.error("MongoDB connection error:", error.message);
+    console.error(`MongoDB connection error (attempt ${connectionAttempts}):`, error.message);
     throw error;
   }
 };

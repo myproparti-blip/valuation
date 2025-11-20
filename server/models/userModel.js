@@ -1,0 +1,15 @@
+export const users = [
+  { role: "admin", username: "admin", password: "2020" },
+  { role: "manager1", username: "manager1", password: "1122" },
+  { role: "manager2", username: "manager2", password: "1133" },
+  { role: "user", username: "user1", password: "1111" },
+  { role: "user", username: "user2", password: "2222" },
+  { role: "user", username: "user3", password: "3333" },
+  { role: "user", username: "user4", password: "4444" },
+  { role: "user", username: "user5", password: "5555" },
+  { role: "user", username: "user6", password: "6666" },
+  { role: "user", username: "user7", password: "7777" },
+  { role: "user", username: "user8", password: "8888" },
+  { role: "user", username: "user9", password: "9999" },
+  { role: "user", username: "user10", password: "1010" },
+];

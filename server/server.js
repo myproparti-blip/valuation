@@ -34,37 +34,27 @@ const io = new Server(httpServer, {
 // Setup Socket.io events
 setupChatEvents(io);
 
-// Connect to Database
-let dbConnected = false;
-connectDB()
-  .then(() => {
-    dbConnected = true;
-    console.log("Database connected successfully");
-  })
-  .catch(err => {
-    console.error("DB Connection Error:", err);
-    // Continue anyway - connection might be established on first request
-  });
+// Connect to Database (non-blocking)
+connectDB().catch(err => {
+  console.error("Initial DB Connection Error:", err);
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware to check database connection on API requests
-app.use((req, res, next) => {
-  // Check if mongoose is connected
-  if (mongoose.connection.readyState !== 1) {
-    // Connection is not established, try to reconnect
-    connectDB()
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        // Connection failed but continue anyway
-        next();
-      });
-  } else {
+// Middleware to ensure database connection
+app.use(async (req, res, next) => {
+  try {
+    // Ensure connection is established before processing request
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+    next();
+  } catch (error) {
+    console.error("Database connection failed for request:", error.message);
+    // Continue anyway - let the route handler deal with DB errors
     next();
   }
 });

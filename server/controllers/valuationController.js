@@ -19,7 +19,13 @@ export const createValuation = async (req, res) => {
             lastUpdatedByRole: requestUser.role
         };
 
-        const newVal = await ValuationModel.create(data);
+        // Create with timeout
+        const newVal = await Promise.race([
+            ValuationModel.create(data),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Database operation timeout")), 30000)
+            )
+        ]);
 
         // Also create file record using upsert to avoid duplicate key error
         const fileData = {
@@ -29,11 +35,22 @@ export const createValuation = async (req, res) => {
             lastUpdatedBy: requestUser.username,
             lastUpdatedByRole: requestUser.role
         };
-        await File.updateOne(
-            { uniqueId: fileData.uniqueId },
-            { $set: fileData },
-            { upsert: true }
-        );
+        
+        try {
+            await Promise.race([
+                File.updateOne(
+                    { uniqueId: fileData.uniqueId },
+                    { $set: fileData },
+                    { upsert: true }
+                ),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("File database operation timeout")), 30000)
+                )
+            ]);
+        } catch (fileErr) {
+            console.error("File creation error (non-blocking):", fileErr.message);
+            // Don't fail the main request if file creation fails
+        }
 
         res.status(201).json({
             success: true,
@@ -41,6 +58,7 @@ export const createValuation = async (req, res) => {
             data: newVal,
         });
     } catch (err) {
+        console.error("Error in createValuation:", err.message);
         res.status(500).json({ success: false, message: "Error creating valuation", error: err.message });
     }
 };

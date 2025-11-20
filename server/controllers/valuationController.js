@@ -487,9 +487,16 @@ export const getAllValuations = async (req, res) => {
             }
         }
 
-        const valuations = await ValuationModel.find(query).sort({ createdAt: -1 });
+        // Add timeout and lean() for better performance
+        const valuations = await ValuationModel.find(query)
+            .sort({ createdAt: -1 })
+            .maxTimeMS(30000)
+            .lean()
+            .exec();
+        
         res.status(200).json(valuations);
     } catch (error) {
+        console.error("Error in getAllValuations:", error.message);
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };

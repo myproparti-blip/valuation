@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 
 // Routes
@@ -34,12 +35,39 @@ const io = new Server(httpServer, {
 setupChatEvents(io);
 
 // Connect to Database
-connectDB().catch(err => console.error("DB Connection Error:", err));
+let dbConnected = false;
+connectDB()
+  .then(() => {
+    dbConnected = true;
+    console.log("Database connected successfully");
+  })
+  .catch(err => {
+    console.error("DB Connection Error:", err);
+    // Continue anyway - connection might be established on first request
+  });
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Middleware to check database connection on API requests
+app.use((req, res, next) => {
+  // Check if mongoose is connected
+  if (mongoose.connection.readyState !== 1) {
+    // Connection is not established, try to reconnect
+    connectDB()
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        // Connection failed but continue anyway
+        next();
+      });
+  } else {
+    next();
+  }
+});
 
 // Serve uploaded files as static
 app.use("/api/uploads", express.static("uploads"));

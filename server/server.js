@@ -34,9 +34,9 @@ const io = new Server(httpServer, {
 // Setup Socket.io events
 setupChatEvents(io);
 
-// Connect to Database (non-blocking)
-connectDB().catch(err => {
-  console.error("Initial DB Connection Error:", err);
+// ❗Try to connect once on startup (non-blocking for Vercel export)
+connectDB().catch((err) => {
+  console.error("Initial DB Connection Error:", err.message);
 });
 
 // Middleware
@@ -44,18 +44,21 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware to ensure database connection before processing requests
+// ✅ Middleware to ensure database connection before processing requests
 app.use(async (req, res, next) => {
   try {
-    // Ensure connection is established before processing request
     if (mongoose.connection.readyState !== 1) {
+      console.log("MongoDB not connected for this request. Reconnecting...");
       await connectDB();
     }
     next();
   } catch (error) {
     console.error("Database connection failed for request:", error.message);
-    // Continue anyway - let the route handler deal with DB errors
-    next();
+    return res.status(503).json({
+      success: false,
+      message: "Database connection unavailable",
+      error: error.message,
+    });
   }
 });
 
@@ -76,7 +79,7 @@ app.get("/", (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("Unhandled Error:", err.stack);
   res.status(500).json({ message: "Internal Server Error" });
 });
 

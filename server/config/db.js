@@ -1,50 +1,55 @@
+// config/db.js
 import mongoose from "mongoose";
 
 let isConnecting = false;
 let connectionPromise = null;
-let connectionAttempts = 0;
 
 const connectDB = async () => {
-  // If already connected, return immediately
+  const uri = process.env.MONGO_URI;
+
+  if (!uri) {
+    console.error("❌ MONGO_URI is not defined in environment variables");
+    throw new Error("MONGO_URI is not defined");
+  }
+
+  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
   if (mongoose.connection.readyState === 1) {
-    connectionAttempts = 0;
+    // Already connected
     return mongoose;
   }
 
-  // If currently connecting, return the existing promise
   if (isConnecting && connectionPromise) {
+    // Reuse existing promise if connection is in progress
     return connectionPromise;
   }
 
   isConnecting = true;
-  connectionAttempts++;
 
-  connectionPromise = mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 120000,
-    connectTimeoutMS: 30000,
-    maxPoolSize: 10,
-    minPoolSize: 2,
-    maxConnecting: 10,
-    retryWrites: true,
-    w: "majority",
-    family: 4,
-    bufferCommands: true,
-    autoCreate: true
-  });
+  // Disable buffering so we fail immediately instead of 'buffering timed out'
+  mongoose.set("bufferCommands", false);
 
-  try {
-    await connectionPromise;
-    isConnecting = false;
-    connectionAttempts = 0;
-    console.log("MongoDB connected successfully");
-    return mongoose;
-  } catch (error) {
-    isConnecting = false;
-    connectionPromise = null;
-    console.error(`MongoDB connection error (attempt ${connectionAttempts}):`, error.message);
-    throw error;
-  }
+  connectionPromise = mongoose
+    .connect(uri, {
+      // Keep options minimal & sane
+      serverSelectionTimeoutMS: 10000, // 10s to find a server
+      maxPoolSize: 10,
+      retryWrites: true,
+      w: "majority",
+      family: 4,
+    })
+    .then((m) => {
+      isConnecting = false;
+      console.log("✅ MongoDB connected:", m.connection.host, m.connection.name);
+      return m;
+    })
+    .catch((err) => {
+      isConnecting = false;
+      connectionPromise = null;
+      console.error("❌ MongoDB connection error:", err.message);
+      throw err;
+    });
+
+  return connectionPromise;
 };
 
 export default connectDB;

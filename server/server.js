@@ -17,7 +17,7 @@ dotenv.config();
 const app = express();
 
 // Connect to Database
-connectDB();
+connectDB().catch(err => console.error("DB Connection Error:", err));
 
 // Middleware
 app.use(cors());
@@ -35,11 +35,27 @@ app.use("/api/images", imageRoutes);          // Image Upload Routes
 
 // Default route
 app.get("/", (req, res) => {
-  res.send("MERN Backend Running Successfully 🚀");
+  res.send("MERN Backend Running Successfully");
 });
 
-// Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  // Server started
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Internal Server Error" });
 });
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+// For Vercel: Export the app
+export default app;
+
+// Start Server (only for local development)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log("Server running on port", PORT);
+  });
+}

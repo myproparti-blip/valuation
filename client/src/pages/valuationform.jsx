@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { FaArrowLeft } from "react-icons/fa";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea, Label, RadioGroup, RadioGroupItem } from "../components/ui";
 import { v4 as uuidv4 } from "uuid";
 import { submitFile } from "../services/fileService";
@@ -170,7 +170,7 @@ const FormPage = ({ user }) => {
             onClick={() => navigate("/dashboard")}
             className="h-8 w-8"
           >
-            <ArrowLeft className="h-3 w-3" />
+            <FaArrowLeft className="h-3 w-3" />
           </Button>
           <div>
             <h1 className="text-lg font-bold">Create New Valuation Form</h1>

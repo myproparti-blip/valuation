@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useCallback } from "react";
-import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { FaTimes, FaCheckCircle, FaExclamationCircle, FaInfoCircle } from "react-icons/fa";
 
 const NotificationContext = createContext();
 
@@ -75,28 +75,28 @@ const NotificationPanel = ({ notifications, onRemove }) => {
                     bg: "bg-green-50",
                     border: "border-green-200",
                     text: "text-green-800",
-                    icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+                    icon: <FaCheckCircle className="w-5 h-5 text-green-600" />,
                 };
             case "error":
                 return {
                     bg: "bg-red-50",
                     border: "border-red-200",
                     text: "text-red-800",
-                    icon: <AlertCircle className="w-5 h-5 text-red-600" />,
+                    icon: <FaExclamationCircle className="w-5 h-5 text-red-600" />,
                 };
             case "warning":
                 return {
                     bg: "bg-yellow-50",
                     border: "border-yellow-200",
                     text: "text-yellow-800",
-                    icon: <AlertCircle className="w-5 h-5 text-yellow-600" />,
+                    icon: <FaExclamationCircle className="w-5 h-5 text-yellow-600" />,
                 };
             default:
                 return {
                     bg: "bg-blue-50",
                     border: "border-blue-200",
                     text: "text-blue-800",
-                    icon: <Info className="w-5 h-5 text-blue-600" />,
+                    icon: <FaInfoCircle className="w-5 h-5 text-blue-600" />,
                 };
         }
     };
@@ -120,7 +120,7 @@ const NotificationPanel = ({ notifications, onRemove }) => {
                             onClick={() => onRemove(notification.id)}
                             className="flex-shrink-0 ml-2"
                         >
-                            <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                            <FaTimes className="w-4 h-4 text-gray-400 hover:text-gray-600" />
                         </button>
                     </div>
                 );

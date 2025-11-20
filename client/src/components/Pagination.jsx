@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { Button } from './ui';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
@@ -31,7 +31,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         disabled={currentPage === 1}
         className="flex items-center gap-0 sm:gap-1 px-2 sm:px-3 h-8 sm:h-9 text-xs sm:text-sm"
       >
-        <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+        <FaChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         <span className="hidden sm:inline">Previous</span>
       </Button>
 
@@ -83,7 +83,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         className="flex items-center gap-0 sm:gap-1 px-2 sm:px-3 h-8 sm:h-9 text-xs sm:text-sm"
       >
         <span className="hidden sm:inline">Next</span>
-        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+        <FaChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
       </Button>
     </div>
   );

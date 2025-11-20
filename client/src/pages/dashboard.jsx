@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Plus, Download, RefreshCw, Eye, Menu, X, ArrowUpDown } from "lucide-react";
+import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../components/ui";
 import { getAllValuations } from "../services/valuationservice";
@@ -258,7 +258,7 @@ const DashboardPage = ({ user, onLogout }) => {
                                 onClick={() => navigate("/valuationform")}
                                 className="bg-white text-blue-600 hover:bg-slate-100 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
                             >
-                                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                <FaPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                 <span className="hidden xs:inline">New Form</span>
                             </Button>
                         )}
@@ -282,7 +282,7 @@ const DashboardPage = ({ user, onLogout }) => {
                             onClick={() => setLogoutModalOpen(true)}
                             title="Logout"
                         >
-                            <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <FaSignOutAlt className="h-4 w-4 sm:h-5 sm:w-5" />
                         </Button>
                     </div>
                 </div>
@@ -380,7 +380,7 @@ const DashboardPage = ({ user, onLogout }) => {
                                 disabled={loading}
                                 className="text-xs sm:text-sm px-2 sm:px-3"
                             >
-                                <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
+                                <FaSyncAlt className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
                                 <span className="hidden sm:inline">Refresh</span>
                             </Button>
                         </div>
@@ -394,13 +394,13 @@ const DashboardPage = ({ user, onLogout }) => {
                                         <TableHeader>
                                             <TableRow className="hover:bg-transparent">
                                                 <TableHead className="min-w-[120px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("uniqueId")}>
-                                                    <div className="flex items-center gap-1">Form ID {sortField === "uniqueId" && <ArrowUpDown className="h-3 w-3" />}</div>
-                                                </TableHead>
-                                                <TableHead className="min-w-[100px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("clientName")}>
-                                                    <div className="flex items-center gap-1">Client Name {sortField === "clientName" && <ArrowUpDown className="h-3 w-3" />}</div>
-                                                </TableHead>
-                                                <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("address")}>
-                                                    <div className="flex items-center gap-1"> Client Address {sortField === "address" && <ArrowUpDown className="h-3 w-3" />}</div>
+                                                     <div className="flex items-center gap-1">Form ID {sortField === "uniqueId" && <FaSort className="h-3 w-3" />}</div>
+                                                 </TableHead>
+                                                 <TableHead className="min-w-[100px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("clientName")}>
+                                                     <div className="flex items-center gap-1">Client Name {sortField === "clientName" && <FaSort className="h-3 w-3" />}</div>
+                                                 </TableHead>
+                                                 <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("address")}>
+                                                     <div className="flex items-center gap-1"> Client Address {sortField === "address" && <FaSort className="h-3 w-3" />}</div>
                                                 </TableHead>
                                                 <TableHead className="min-w-[100px] text-xs sm:text-sm">
                                                     <div className="flex items-center gap-1">
@@ -445,17 +445,17 @@ const DashboardPage = ({ user, onLogout }) => {
                                                     </div>
                                                 </TableHead>
                                                 <TableHead className="min-w-[90px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("mobileNumber")}>
-                                                    <div className="flex items-center gap-1">Mobile {sortField === "mobileNumber" && <ArrowUpDown className="h-3 w-3" />}</div>
-                                                </TableHead>
-                                                <TableHead className="min-w-[80px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("payment")}>
-                                                    <div className="flex items-center gap-1">Payment {sortField === "payment" && <ArrowUpDown className="h-3 w-3" />}</div>
-                                                </TableHead>
-                                                <TableHead className="min-w-[70px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("status")}>
-                                                    <div className="flex items-center gap-1">Status {sortField === "status" && <ArrowUpDown className="h-3 w-3" />}</div>
-                                                </TableHead>
-                                                <TableHead className="min-w-[80px] text-xs sm:text-sm">Duration</TableHead>
-                                                <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("createdAt")}>
-                                                    <div className="flex items-center gap-1">Date & Time {sortField === "createdAt" && <ArrowUpDown className="h-3 w-3" />}</div>
+                                                     <div className="flex items-center gap-1">Mobile {sortField === "mobileNumber" && <FaSort className="h-3 w-3" />}</div>
+                                                 </TableHead>
+                                                 <TableHead className="min-w-[80px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("payment")}>
+                                                     <div className="flex items-center gap-1">Payment {sortField === "payment" && <FaSort className="h-3 w-3" />}</div>
+                                                 </TableHead>
+                                                 <TableHead className="min-w-[70px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("status")}>
+                                                     <div className="flex items-center gap-1">Status {sortField === "status" && <FaSort className="h-3 w-3" />}</div>
+                                                 </TableHead>
+                                                 <TableHead className="min-w-[80px] text-xs sm:text-sm">Duration</TableHead>
+                                                 <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("createdAt")}>
+                                                     <div className="flex items-center gap-1">Date & Time {sortField === "createdAt" && <FaSort className="h-3 w-3" />}</div>
                                                 </TableHead>
                                                 <TableHead className="min-w-[180px] text-xs sm:text-sm">Actions</TableHead>
                                             </TableRow>
@@ -524,7 +524,7 @@ const DashboardPage = ({ user, onLogout }) => {
                                                                      className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
                                                                      onClick={() => handleDownloadPDF(record)}
                                                                  >
-                                                                     <Download className="h-3 w-3 mr-0.5" />
+                                                                     <FaDownload className="h-3 w-3 mr-0.5" />
                                                                      PDF
                                                                  </Badge>
                                                              )}
@@ -569,7 +569,7 @@ const DashboardPage = ({ user, onLogout }) => {
                             </>
                         ) : (
                             <div className="text-center py-12">
-                                <Eye className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+                                <FaEye className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
                                 <p className="text-muted-foreground">No data found</p>
                             </div>
                         )}

@@ -1,6 +1,6 @@
 import api from "./axios";
 
-const API_BASE_URL = "/custom-options";
+const API_BASE_URL = "/options";
 
 const handleError = (error, defaultMessage) => {
   const errorMessage = error?.response?.data?.message || 

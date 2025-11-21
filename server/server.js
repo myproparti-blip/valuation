@@ -2,8 +2,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { createServer } from "http";
-import { Server } from "socket.io";
 import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 
@@ -15,23 +13,19 @@ import imageRoutes from "./routes/imageRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import customOptionsRoutes from "./routes/customOptionsRoutes.js";
 
-// Socket events
-import { setupChatEvents } from "./events/chatEvents.js";
-
 dotenv.config();
 
 const app = express();
-const httpServer = createServer(app);
 
 // Allowed frontend URLs
 const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:3000",
   "http://localhost:5173",
+
+  // Add your deployed frontend URL (VERY IMPORTANT)
+  "https://valuation-qb2y.vercel.app",
 ];
 
-// ----------------------------
-// CORS (Full Fix)
-// ----------------------------
 app.use(
   cors({
     origin: allowedOrigins,
@@ -41,44 +35,22 @@ app.use(
   })
 );
 
-// ❗Global OPTIONS handler (Fix for Node v22 – avoids "*")
+// Handle Vercel OPTIONS issue
 app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
 
-// ----------------------------
-// SOCKET.IO CORS
-// ----------------------------
-const io = new Server(httpServer, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
-
-// Setup chat socket events
-setupChatEvents(io);
-
-// ----------------------------
-// INITIAL DB CONNECT
-// ----------------------------
+// DB connect
 connectDB().catch((err) =>
   console.error("Initial DB Connection Error:", err.message)
 );
 
-// ----------------------------
-// REQUEST PARSERS
-// ----------------------------
+// Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ----------------------------
-// ENSURE DB CONNECTED PER REQUEST
-// ----------------------------
+// Re-check DB connection per request
 app.use(async (req, res, next) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -95,52 +67,37 @@ app.use(async (req, res, next) => {
   }
 });
 
-// ----------------------------
-// STATIC FILES
-// ----------------------------
+// Static
 app.use("/api/uploads", express.static("uploads"));
 
-// ----------------------------
-// ROUTES
-// ----------------------------
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/valuations", valuationRoutes);
 app.use("/api/images", imageRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/options", customOptionsRoutes);
 
-// ----------------------------
-// ROOT ROUTE
-// ----------------------------
+// Root
 app.get("/", (req, res) => {
-  res.send("MERN Backend Running Successfully");
+  res.send("MERN Backend Running Successfully (WebSockets Removed)");
 });
 
-// ----------------------------
-// ERROR HANDLER
-// ----------------------------
+// Error Handler
 app.use((err, req, res, next) => {
   console.error("Unhandled Error:", err.stack);
   res.status(500).json({ message: "Internal Server Error" });
 });
 
-// ----------------------------
-// 404 HANDLER
-// ----------------------------
+// 404
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-// ----------------------------
-// START SERVER (LOCAL ONLY)
-// ----------------------------
+// Local development only
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 5000;
-  httpServer.listen(PORT, () => {
-    console.log("Server running on port", PORT);
-    console.log("WebSocket ready for chat");
-  });
+  app.listen(PORT, () => console.log("Server running on port", PORT));
 }
 
-// Export for Vercel
 export default app;

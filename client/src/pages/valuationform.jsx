@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { submitFile } from "../services/fileService";
 import { createValuation } from "../services/valuationservice";
 import { addCustomOption, getCustomOptions, deleteCustomOption } from "../services/customOptionsService";
-import { invalidateCache } from "../services/axios";
+import api, { invalidateCache } from "../services/axios";
 import { showLoader, hideLoader } from "../redux/slices/loaderSlice";
 import { useNotification } from "../context/NotificationContext";
 
@@ -48,23 +48,52 @@ const FormPage = ({ user, onLogin }) => {
     const defaultDsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
     const defaultEngineers = ["Engineer A", "Engineer B", "Engineer C"];
 
-    const [banks, setBanks] = useState(defaultBanks);
-    const [cities, setCities] = useState(defaultCities);
-    const [dsaNames, setDsaNames] = useState(defaultDsaNames);
-    const [engineers, setEngineers] = useState(defaultEngineers);
+    const [banks, setBanks] = useState([...defaultBanks]);
+    const [cities, setCities] = useState([...defaultCities]);
+    const [dsaNames, setDsaNames] = useState([...defaultDsaNames]);
+    const [engineers, setEngineers] = useState([...defaultEngineers]);
+    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const isMountedRef = useRef(true);
+    const loadingRef = useRef(false);
 
-    // Load custom options from database
-    const loadCustomOptions = async () => {
+    // Load custom options from database with fresh API call
+    const loadCustomOptions = useCallback(async () => {
+        // Prevent race conditions - only one load at a time
+        if (loadingRef.current) return;
+        loadingRef.current = true;
+        
         try {
-            // Clear cache before fetching to get fresh data
-            invalidateCache("custom-options");
+            // Clear entire cache before fetching
+            invalidateCache("options");
             
-            const customBanks = await getCustomOptions("banks");
-            const customCities = await getCustomOptions("cities");
-            const customDsas = await getCustomOptions("dsas");
-            const customEngineers = await getCustomOptions("engineers");
+            // Add timestamp to URL to bypass any remaining cache
+            const timestamp = Date.now();
+            const params = { _t: timestamp };
+            
+            // Fetch fresh data with timestamp parameter
+            const [customBanks, customCities, customDsas, customEngineers] = await Promise.all([
+                (async () => {
+                    const response = await api.get(`/options/banks`, { params });
+                    return response.data.data || [];
+                })().catch(() => []),
+                (async () => {
+                    const response = await api.get(`/options/cities`, { params });
+                    return response.data.data || [];
+                })().catch(() => []),
+                (async () => {
+                    const response = await api.get(`/options/dsas`, { params });
+                    return response.data.data || [];
+                })().catch(() => []),
+                (async () => {
+                    const response = await api.get(`/options/engineers`, { params });
+                    return response.data.data || [];
+                })().catch(() => [])
+            ]);
 
-            // Remove duplicates and add custom options first
+            // Only update if component is still mounted
+            if (!isMountedRef.current) return;
+
+            // Remove duplicates and merge with defaults
             const uniqueBanks = [...new Set([...(customBanks || []), ...defaultBanks])];
             const uniqueCities = [...new Set([...(customCities || []), ...defaultCities])];
             const uniqueDsas = [...new Set([...(customDsas || []), ...defaultDsaNames])];
@@ -74,18 +103,31 @@ const FormPage = ({ user, onLogin }) => {
             setCities(uniqueCities);
             setDsaNames(uniqueDsas);
             setEngineers(uniqueEngineers);
+            setIsDataLoaded(true);
+            console.log("✓ Custom options loaded successfully");
         } catch (error) {
             console.error("Error loading custom options:", error);
-            // Keep default options if load fails
-            setBanks(defaultBanks);
-            setCities(defaultCities);
-            setDsaNames(defaultDsaNames);
-            setEngineers(defaultEngineers);
+            if (!isMountedRef.current) return;
+            
+            // Fallback to defaults on error
+            setBanks([...defaultBanks]);
+            setCities([...defaultCities]);
+            setDsaNames([...defaultDsaNames]);
+            setEngineers([...defaultEngineers]);
+            setIsDataLoaded(true);
+        } finally {
+            loadingRef.current = false;
         }
-    };
+    }, []);
 
-    // Load custom options on component mount and when page becomes visible
+    // Load custom options on component mount, route change, and visibility change
     useEffect(() => {
+        isMountedRef.current = true;
+        loadingRef.current = false;
+        
+        // Reset data loaded flag when route changes
+        setIsDataLoaded(false);
+        
         // Load immediately on mount
         loadCustomOptions();
         
@@ -105,10 +147,11 @@ const FormPage = ({ user, onLogin }) => {
         window.addEventListener('focus', handleFocus);
         
         return () => {
+            isMountedRef.current = false;
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
         };
-    }, [location.pathname]);
+    }, [location.pathname, loadCustomOptions]);
 
     const uniqueId = `FORM-${uuidv4()}`;
     const dateTime = new Date().toLocaleString();
@@ -202,18 +245,27 @@ const FormPage = ({ user, onLogin }) => {
     const deleteCustomEntry = async (type, value) => {
         try {
             await deleteCustomOption(type, value);
-            invalidateCache("custom-options");
             
+            // Clear entire cache
+            invalidateCache("options");
+            
+            // Optimistically remove from UI
             if (type === "banks") {
-                setBanks(prev => prev.filter(item => item !== value));
+                setBanks(prev => prev && prev.length > 0 ? prev.filter(item => item !== value) : [...defaultBanks]);
             } else if (type === "cities") {
-                setCities(prev => prev.filter(item => item !== value));
+                setCities(prev => prev && prev.length > 0 ? prev.filter(item => item !== value) : [...defaultCities]);
             } else if (type === "dsas") {
-                setDsaNames(prev => prev.filter(item => item !== value));
+                setDsaNames(prev => prev && prev.length > 0 ? prev.filter(item => item !== value) : [...defaultDsaNames]);
             } else if (type === "engineers") {
-                setEngineers(prev => prev.filter(item => item !== value));
+                setEngineers(prev => prev && prev.length > 0 ? prev.filter(item => item !== value) : [...defaultEngineers]);
             }
+            
             showSuccess(`${type} option deleted successfully`);
+            
+            // Reload fresh data after deletion
+            setTimeout(() => {
+                loadCustomOptions();
+            }, 200);
         } catch (error) {
             console.error(`Error deleting ${type}:`, error);
             showError(`Failed to delete ${type} option`);
@@ -405,7 +457,7 @@ const FormPage = ({ user, onLogin }) => {
                                     <div className="col-span-2 space-y-2">
                                         <Label className="text-sm font-semibold">Bank Name *</Label>
                                         <div className="grid grid-cols-4 gap-1">
-                                            {banks.map(name => (
+                                            {banks && banks.length > 0 && banks.map(name => (
                                                 <div key={name} className="relative group">
                                                     <Button
                                                         type="button"
@@ -462,7 +514,7 @@ const FormPage = ({ user, onLogin }) => {
                                     <div className="col-span-2 space-y-2">
                                         <Label className="text-sm font-semibold">City *</Label>
                                         <div className="grid grid-cols-3 gap-1">
-                                            {cities.map(name => (
+                                            {cities && cities.length > 0 && cities.map(name => (
                                                 <div key={name} className="relative group">
                                                     <Button
                                                         type="button"
@@ -591,7 +643,7 @@ const FormPage = ({ user, onLogin }) => {
                                     <div className="col-span-2 space-y-2">
                                         <Label className="text-sm font-semibold">Sales Agent (DSA) *</Label>
                                         <div className="grid grid-cols-4 gap-1">
-                                            {dsaNames.map(name => (
+                                            {dsaNames && dsaNames.length > 0 && dsaNames.map(name => (
                                                 <div key={name} className="relative group">
                                                     <Button
                                                         type="button"
@@ -648,7 +700,7 @@ const FormPage = ({ user, onLogin }) => {
                                     <div className="col-span-2 space-y-2">
                                         <Label className="text-sm font-semibold">Engineer Name *</Label>
                                         <div className="grid grid-cols-4 gap-1">
-                                            {engineers.map(name => (
+                                            {engineers && engineers.length > 0 && engineers.map(name => (
                                                 <div key={name} className="relative group">
                                                     <Button
                                                         type="button"

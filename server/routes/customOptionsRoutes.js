@@ -4,6 +4,11 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Health check (no auth required)
+router.get("/health", (req, res) => {
+  res.status(200).json({ success: true, message: "Custom options route is working" });
+});
+
 // Get custom options for a type (auth required - user-specific)
 router.get("/:type", authMiddleware, getCustomOptions);
 

@@ -78,6 +78,8 @@ app.use(async (req, res, next) => {
     if (mongoose.connection.readyState !== 1) {
       console.log("MongoDB disconnected. Reconnecting...");
       await connectDB();
+
+      
     }
     next();
   } catch (error) {

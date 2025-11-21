@@ -7,7 +7,6 @@ import LoginPage from "./pages/login";
 import DashboardPage from "./pages/dashboard";
 import FormPage from "./pages/valuationform";
 import EditValuationPage from "./pages/valuationeditform";
-import { LoadingProvider } from "./context/LoadingContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { ChatProvider } from "./context/ChatContext";
 import store from "./redux/store";
@@ -65,64 +64,62 @@ function App() {
     return (
         <Provider store={store}>
             <NotificationProvider>
-                <LoadingProvider>
-                    <ChatProvider>
-                        <BrowserRouter>
-                            <GlobalLoader />
-                            <Routes>
-                            {/* Redirect root to dashboard (accessible to both logged in and not logged in users) */}
-                            <Route
-                                path="/"
-                                element={
-                                    <Navigate to="/dashboard" replace />
-                                }
-                            />
+                <ChatProvider>
+                    <BrowserRouter>
+                        <GlobalLoader />
+                        <Routes>
+                        {/* Redirect root to dashboard (accessible to both logged in and not logged in users) */}
+                        <Route
+                            path="/"
+                            element={
+                                <Navigate to="/dashboard" replace />
+                            }
+                        />
 
-                            {/* Public Routes */}
-                            <Route
-                                path="/login"
-                                element={
-                                    <PublicRoute>
-                                        <LoginPage onLogin={handleLogin} />
-                                    </PublicRoute>
-                                }
-                            />
+                        {/* Public Routes */}
+                        <Route
+                            path="/login"
+                            element={
+                                <PublicRoute>
+                                    <LoginPage onLogin={handleLogin} />
+                                </PublicRoute>
+                            }
+                        />
 
-                            {/* Protected Routes */}
-                            <Route
-                                path="/dashboard"
-                                element={
-                                    <ProtectedRoute>
-                                        <DashboardPage user={user} onLogout={handleLogout} onLogin={handleLogin} />
-                                    </ProtectedRoute>
-                                }
-                            />
+                        {/* Protected Routes */}
+                        <Route
+                            path="/dashboard"
+                            element={
+                                <ProtectedRoute>
+                                    <DashboardPage user={user} onLogout={handleLogout} onLogin={handleLogin} />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                            <Route
-                                path="/valuationform"
-                                element={
-                                    <ProtectedRoute>
-                                        <FormPage user={user} onLogin={handleLogin} />
-                                    </ProtectedRoute>
-                                }
-                            />
+                        <Route
+                            path="/valuationform"
+                            element={
+                                <ProtectedRoute>
+                                    <FormPage user={user} onLogin={handleLogin} />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                            {/* Edit Valuation Page with ID parameter */}
-                            <Route
-                                path="/valuationeditform/:id"
-                                element={
-                                    <ProtectedRoute>
-                                        <EditValuationPage user={user} onLogin={handleLogin} />
-                                    </ProtectedRoute>
-                                }
-                            />
+                        {/* Edit Valuation Page with ID parameter */}
+                        <Route
+                            path="/valuationeditform/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <EditValuationPage user={user} onLogin={handleLogin} />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                            {/* Catch all route - redirect to login */}
-                            <Route path="*" element={<Navigate to="/login" replace />} />
-                        </Routes>
-                        </BrowserRouter>
-                    </ChatProvider>
-                </LoadingProvider>
+                        {/* Catch all route - redirect to login */}
+                        <Route path="*" element={<Navigate to="/login" replace />} />
+                    </Routes>
+                    </BrowserRouter>
+                </ChatProvider>
             </NotificationProvider>
         </Provider>
     );

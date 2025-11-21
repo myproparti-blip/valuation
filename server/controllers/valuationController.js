@@ -406,11 +406,14 @@ export const managerSubmit = async (req, res) => {
             });
         }
 
-        // Can only update user submissions
-        if (!existingValuation.username.toLowerCase().startsWith("user")) {
+        // Can approve/reject user submissions OR own submissions (admin/manager can approve/reject their own)
+        const isUserSubmission = existingValuation.username.toLowerCase().startsWith("user");
+        const isOwnSubmission = existingValuation.username === requestUser.username;
+        
+        if (!isUserSubmission && !isOwnSubmission) {
             return res.status(403).json({ 
                 success: false, 
-                message: "Forbidden - Can only approve/reject user submissions" 
+                message: "Forbidden - Can only approve/reject user submissions or your own submissions" 
             });
         }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import exifr from 'exifr';
 import {
     FaArrowLeft,
@@ -14,17 +15,21 @@ import {
     FaCompass,
     FaBuilding,
     FaImage,
-    FaLocationArrow
+    FaLocationArrow,
+    FaCheckCircle,
+    FaTimesCircle
 } from "react-icons/fa";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Textarea, Label, Badge, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, RadioGroup, RadioGroupItem } from "../components/ui";
 import { getValuationById, updateValuation, managerSubmit } from "../services/valuationservice";
-import { useLoading } from "../context/LoadingContext";
+import { showLoader, hideLoader } from "../redux/slices/loaderSlice";
 import { useNotification } from "../context/NotificationContext";
 import { uploadPropertyImages, uploadLocationImages } from "../services/imageService";
+import { invalidateCache } from "../services/axios";
 
 const EditValuationPage = ({ user, onLogin }) => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const [valuation, setValuation] = useState(null);
     const isLoggedIn = !!user;
@@ -69,7 +74,6 @@ const EditValuationPage = ({ user, onLogin }) => {
     const fileInputRef4 = useRef(null);
     const locationFileInputRef = useRef(null);
 
-    const { showLoading, hideLoading } = useLoading();
     const { showSuccess, showError } = useNotification();
     const username = user?.username || "";
     const role = user?.role || "";
@@ -228,64 +232,54 @@ const EditValuationPage = ({ user, onLogin }) => {
     const handleLocationImageUpload = async (e) => {
         const files = Array.from(e.target.files);
 
-        for (const file of files) {
-            let gpsCoordinates = null;
+        // Only take the first file for location images (single image only)
+        if (files.length === 0) return;
 
-            try {
-                // Try to extract GPS from EXIF
-                const exifData = await exifr.parse(file);
+        const file = files[0];
+        let gpsCoordinates = null;
 
-                if (exifData?.latitude && exifData?.longitude) {
-                    gpsCoordinates = {
-                        latitude: exifData.latitude,
-                        longitude: exifData.longitude
-                    };
-                    alert(`✓ GPS found\nLat: ${gpsCoordinates.latitude.toFixed(6)}\nLng: ${gpsCoordinates.longitude.toFixed(6)}`);
-                }
-            } catch (error) {
-                // Error reading EXIF data
+        try {
+            // Try to extract GPS from EXIF
+            const exifData = await exifr.parse(file);
+
+            if (exifData?.latitude && exifData?.longitude) {
+                gpsCoordinates = {
+                    latitude: exifData.latitude,
+                    longitude: exifData.longitude
+                };
+                alert(`✓ GPS found\nLat: ${gpsCoordinates.latitude.toFixed(6)}\nLng: ${gpsCoordinates.longitude.toFixed(6)}`);
             }
-
-            const preview = URL.createObjectURL(file);
-            setLocationImagePreviews(prev => [...prev, { file, preview }]);
-
-            setFormData(prev => ({
-                ...prev,
-                locationImages: [...prev.locationImages, file],
-                coordinates: gpsCoordinates ? gpsCoordinates : prev.coordinates
-            }));
+        } catch (error) {
+            // Error reading EXIF data
         }
-    }; const handleImageUpload = async (e, inputNumber) => {
+
+        const preview = URL.createObjectURL(file);
+
+        // Remove old location image and add new one (replace instead of append)
+        if (locationImagePreviews.length > 0) {
+            URL.revokeObjectURL(locationImagePreviews[0].preview);
+        }
+
+        setLocationImagePreviews([{ file, preview }]);
+
+        setFormData(prev => ({
+            ...prev,
+            locationImages: [file],
+            coordinates: gpsCoordinates ? gpsCoordinates : prev.coordinates
+        }));
+    };
+
+    const handleImageUpload = async (e, inputNumber) => {
         const files = Array.from(e.target.files);
 
         for (const file of files) {
-            let gpsCoordinates = null;
-
-            try {
-                // Read file as ArrayBuffer for exifr
-                const arrayBuffer = await file.arrayBuffer();
-                const exifData = await exifr.parse(arrayBuffer);
-
-                if (exifData && exifData.latitude && exifData.longitude) {
-                    gpsCoordinates = {
-                        latitude: exifData.latitude,
-                        longitude: exifData.longitude
-                    };
-                    alert(`✓ GPS coordinates found in ${file.name}\nLatitude: ${gpsCoordinates.latitude.toFixed(6)}\nLongitude: ${gpsCoordinates.longitude.toFixed(6)}`);
-                }
-            } catch (error) {
-                // Image has no GPS data or error reading
-            }
-
+            // No GPS extraction for property images - only for location images
             const preview = URL.createObjectURL(file);
             setImagePreviews(prev => [...prev, { file, preview, inputNumber }]);
             setFormData(prev => ({
                 ...prev,
-                propertyImages: [...prev.propertyImages, { file, inputNumber }],
-                coordinates: gpsCoordinates ? gpsCoordinates : prev.coordinates
+                propertyImages: [...prev.propertyImages, { file, inputNumber }]
             }));
-
-            if (gpsCoordinates) break;
         }
     };
     const removeLocationImage = (index) => {
@@ -409,7 +403,7 @@ const EditValuationPage = ({ user, onLogin }) => {
 
         try {
             setLoading(true);
-            showLoading("Saving your changes...");
+            dispatch(showLoader("Saving your changes..."));
 
             // Build regular JSON payload
             const payload = {
@@ -425,19 +419,23 @@ const EditValuationPage = ({ user, onLogin }) => {
             delete payload.createdAt;
             delete payload.username;
 
-            // Upload new property images to Cloudinary
-            let uploadedPropertyImages = [];
-            const newPropertyImages = imagePreviews.filter(p => p && p.file);
-            if (newPropertyImages.length > 0) {
-                uploadedPropertyImages = await uploadPropertyImages(newPropertyImages, valuation.uniqueId);
-            }
-
-            // Upload new location images to Cloudinary
-            let uploadedLocationImages = [];
-            const newLocationImages = locationImagePreviews.filter(p => p && p.file);
-            if (newLocationImages.length > 0) {
-                uploadedLocationImages = await uploadLocationImages(newLocationImages, valuation.uniqueId);
-            }
+            // Parallel image uploads
+            const [uploadedPropertyImages, uploadedLocationImages] = await Promise.all([
+                (async () => {
+                    const newPropertyImages = imagePreviews.filter(p => p && p.file);
+                    if (newPropertyImages.length > 0) {
+                        return await uploadPropertyImages(newPropertyImages, valuation.uniqueId);
+                    }
+                    return [];
+                })(),
+                (async () => {
+                    const newLocationImages = locationImagePreviews.filter(p => p && p.file);
+                    if (newLocationImages.length > 0) {
+                        return await uploadLocationImages(newLocationImages, valuation.uniqueId);
+                    }
+                    return [];
+                })()
+            ]);
 
             // Combine previously saved images with newly uploaded Cloudinary URLs
             const previousPropertyImages = imagePreviews
@@ -448,21 +446,27 @@ const EditValuationPage = ({ user, onLogin }) => {
                     index: idx
                 }));
 
-            const previousLocationImages = locationImagePreviews
-                .filter(p => p && !p.file && p.preview)
-                .map((preview, idx) => ({
-                    url: preview.preview,
-                    index: idx
-                }));
+            // For location images: if new image uploaded, use only the new one; otherwise use previous
+            const previousLocationImages = (uploadedLocationImages.length === 0)
+                ? locationImagePreviews
+                    .filter(p => p && !p.file && p.preview)
+                    .map((preview, idx) => ({
+                        url: preview.preview,
+                        index: idx
+                    }))
+                : [];
 
             payload.propertyImages = [...previousPropertyImages, ...uploadedPropertyImages];
-            payload.locationImages = [...previousLocationImages, ...uploadedLocationImages];
+            payload.locationImages = uploadedLocationImages.length > 0 ? uploadedLocationImages : previousLocationImages;
 
+            // Clear draft before API call
+            localStorage.removeItem(`valuation_draft_${username}`);
 
-
-            // Call API to update valuation with JSON payload (no FormData needed)
-            showLoading("Saving valuation...");
+            // Call API to update valuation with JSON payload
             const apiResponse = await updateValuation(id, payload);
+            
+            // Invalidate cache to ensure fresh data on dashboard
+            invalidateCache("/valuations");
 
             // Status always updates to on-progress for admin/managers on save
             let newStatus = "on-progress";
@@ -483,23 +487,16 @@ const EditValuationPage = ({ user, onLogin }) => {
             setBankName(payload.bankName);
             setCity(payload.city);
 
-            // Clear draft from localStorage
-            localStorage.removeItem(`valuation_draft_${username}`);
-
-
-
-            // Navigate to dashboard after brief delay to show success
+            // Show success and navigate
             showSuccess("Form saved successfully!");
+            dispatch(hideLoader());
             setTimeout(() => {
-                hideLoading();
                 navigate("/dashboard", { replace: true });
-            }, 1500);
+            }, 300);
         } catch (err) {
             const errorMessage = err.message || "Failed to update form";
             showError(errorMessage);
-            hideLoading();
-            setLoading(false);
-        } finally {
+            dispatch(hideLoader());
             setLoading(false);
         }
     };
@@ -521,7 +518,7 @@ const EditValuationPage = ({ user, onLogin }) => {
 
         try {
             setLoading(true);
-            showLoading(`${actionLabel}ing form...`);
+            dispatch(showLoader(`${actionLabel}ing form...`));
 
             const payload = {
                 status: statusValue,
@@ -529,6 +526,9 @@ const EditValuationPage = ({ user, onLogin }) => {
             };
 
             const responseData = await managerSubmit(id, payload);
+            
+            // Invalidate cache to ensure fresh data on dashboard
+            invalidateCache("/valuations");
 
             const updatedValuation = {
                 ...valuation,
@@ -544,13 +544,13 @@ const EditValuationPage = ({ user, onLogin }) => {
 
             showSuccess(`Form ${statusValue} successfully!`);
             setTimeout(() => {
-                hideLoading();
+                dispatch(hideLoader());
                 setLoading(false);
                 navigate("/dashboard");
             }, 1000);
         } catch (err) {
             showError(err.message || `Failed to ${actionLabel.toLowerCase()} form`);
-            hideLoading();
+            dispatch(hideLoader());
             setLoading(false);
         }
     };
@@ -566,7 +566,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                     <CardContent className="pt-6">
                         <div className="text-center space-y-4">
                             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                            <p className="text-muted-foreground">Loading valuation...</p>
+                            <p className="text-muted-foreground">Loading</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -1133,7 +1133,6 @@ const EditValuationPage = ({ user, onLogin }) => {
                                         <input
                                             type="file"
                                             ref={locationFileInputRef}
-                                            multiple
                                             accept="image/*"
                                             onChange={handleLocationImageUpload}
                                             style={{ display: 'none' }}
@@ -1149,30 +1148,28 @@ const EditValuationPage = ({ user, onLogin }) => {
                                             Upload Location Images
                                         </Button>
 
-                                        {/* Location Image Previews */}
-                                        <div className="flex flex-wrap gap-4">
-                                            {locationImagePreviews.map((preview, index) => (
-                                                <Card key={index} className="relative w-24 h-24 border-2 border-dashed">
-                                                    <CardContent className="p-0 h-full">
-                                                        <img
-                                                            src={preview.preview}
-                                                            alt={`Location Preview ${index + 1}`}
-                                                            className="w-full h-full object-cover rounded"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            onClick={() => removeLocationImage(index)}
-                                                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            disabled={!canEdit}
-                                                        >
-                                                            ×
-                                                        </Button>
-                                                    </CardContent>
-                                                </Card>
-                                            ))}
-                                        </div>
+                                        {/* Location Image Preview - Single Image Only */}
+                                        {locationImagePreviews.length > 0 && (
+                                            <Card className="relative w-32 h-32 border-2 border-dashed">
+                                                <CardContent className="p-0 h-full">
+                                                    <img
+                                                        src={locationImagePreviews[0].preview}
+                                                        alt="Location Preview"
+                                                        className="w-full h-full object-cover rounded"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => removeLocationImage(0)}
+                                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        disabled={!canEdit}
+                                                    >
+                                                        ×
+                                                    </Button>
+                                                </CardContent>
+                                            </Card>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

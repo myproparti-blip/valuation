@@ -1,4 +1,5 @@
 import api from "./axios";
+import { compressImage, compressMultipleImages } from "../utils/imageCompression";
 
 const handleError = (error, defaultMessage) => {
   let errorMessage = defaultMessage;
@@ -109,30 +110,41 @@ export const uploadMultipleImages = async (imageArray, folderPath) => {
  */
 export const uploadPropertyImages = async (imagePreviews, uniqueId) => {
   try {
-    const uploadedImages = [];
-
-    for (let i = 0; i < imagePreviews.length; i++) {
-      const imagePreview = imagePreviews[i];
-      
-      if (!imagePreview || !imagePreview.file) {
-        continue;
-      }
-
-      const formData = new FormData();
-      formData.append('images', imagePreview.file);
-      formData.append('folderPath', `valuations/${uniqueId}/property_images`);
-
-      const response = await api.post("/images/upload", formData);
-      
-      if (response.data.images && response.data.images.length > 0) {
-        uploadedImages.push({
-          ...response.data.images[0],
-          inputNumber: imagePreview.inputNumber || i + 1
-        });
-      }
+    // Filter valid images
+    const validImages = imagePreviews.filter(img => img && img.file);
+    
+    if (validImages.length === 0) {
+      return [];
     }
 
-    return uploadedImages;
+    // Compress all images in parallel
+    const compressionPromises = validImages.map((imagePreview, i) =>
+      compressImage(imagePreview.file)
+        .then(compressedFile => ({ compressedFile, imagePreview, index: i }))
+    );
+    
+    const compressedImages = await Promise.all(compressionPromises);
+
+    // Upload all compressed images in parallel
+    const uploadPromises = compressedImages.map(({ compressedFile, imagePreview, index }) => {
+      const formData = new FormData();
+      formData.append('images', compressedFile);
+      formData.append('folderPath', `valuations/${uniqueId}/property_images`);
+      
+      return api.post("/images/upload", formData)
+        .then(response => {
+          if (response.data.images && response.data.images.length > 0) {
+            return {
+              ...response.data.images[0],
+              inputNumber: imagePreview.inputNumber || index + 1
+            };
+          }
+          return null;
+        });
+    });
+
+    const uploadedImages = await Promise.all(uploadPromises);
+    return uploadedImages.filter(img => img !== null);
   } catch (error) {
     handleError(error, "Failed to upload property images");
   }
@@ -146,27 +158,38 @@ export const uploadPropertyImages = async (imagePreviews, uniqueId) => {
  */
 export const uploadLocationImages = async (locationImagePreviews, uniqueId) => {
   try {
-    const uploadedImages = [];
-
-    for (let i = 0; i < locationImagePreviews.length; i++) {
-      const imagePreview = locationImagePreviews[i];
-      
-      if (!imagePreview || !imagePreview.file) {
-        continue;
-      }
-
-      const formData = new FormData();
-      formData.append('images', imagePreview.file);
-      formData.append('folderPath', `valuations/${uniqueId}/location_images`);
-
-      const response = await api.post("/images/upload", formData);
-      
-      if (response.data.images && response.data.images.length > 0) {
-        uploadedImages.push(response.data.images[0]);
-      }
+    // Filter valid images
+    const validImages = locationImagePreviews.filter(img => img && img.file);
+    
+    if (validImages.length === 0) {
+      return [];
     }
 
-    return uploadedImages;
+    // Compress all images in parallel
+    const compressionPromises = validImages.map((imagePreview, i) =>
+      compressImage(imagePreview.file)
+        .then(compressedFile => ({ compressedFile, imagePreview, index: i }))
+    );
+    
+    const compressedImages = await Promise.all(compressionPromises);
+
+    // Upload all compressed images in parallel
+    const uploadPromises = compressedImages.map(({ compressedFile }) => {
+      const formData = new FormData();
+      formData.append('images', compressedFile);
+      formData.append('folderPath', `valuations/${uniqueId}/location_images`);
+      
+      return api.post("/images/upload", formData)
+        .then(response => {
+          if (response.data.images && response.data.images.length > 0) {
+            return response.data.images[0];
+          }
+          return null;
+        });
+    });
+
+    const uploadedImages = await Promise.all(uploadPromises);
+    return uploadedImages.filter(img => img !== null);
   } catch (error) {
     handleError(error, "Failed to upload location images");
   }

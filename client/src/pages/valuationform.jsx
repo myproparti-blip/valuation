@@ -1,15 +1,20 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea, Label, RadioGroup, RadioGroupItem } from "../components/ui";
 import { v4 as uuidv4 } from "uuid";
 import { submitFile } from "../services/fileService";
 import { createValuation } from "../services/valuationservice";
-import { useLoading } from "../context/LoadingContext";
+import { addCustomOption, getCustomOptions, deleteCustomOption } from "../services/customOptionsService";
+import { invalidateCache } from "../services/axios";
+import { showLoader, hideLoader } from "../redux/slices/loaderSlice";
 import { useNotification } from "../context/NotificationContext";
 
 const FormPage = ({ user, onLogin }) => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const isLoggedIn = !!user;
     const [bankName, setBankName] = useState("");
@@ -34,15 +39,76 @@ const FormPage = ({ user, onLogin }) => {
         notes: ""
     });
 
-    const { showLoading, hideLoading } = useLoading();
     const { showSuccess, showError } = useNotification();
     const username = user?.username || "";
     const role = user?.role || "";
 
-    const banks = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB"];
-    const cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata"];
-    const dsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
-    const engineers = ["Engineer A", "Engineer B", "Engineer C"];
+    const defaultBanks = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB"];
+    const defaultCities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata"];
+    const defaultDsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
+    const defaultEngineers = ["Engineer A", "Engineer B", "Engineer C"];
+
+    const [banks, setBanks] = useState(defaultBanks);
+    const [cities, setCities] = useState(defaultCities);
+    const [dsaNames, setDsaNames] = useState(defaultDsaNames);
+    const [engineers, setEngineers] = useState(defaultEngineers);
+
+    // Load custom options from database
+    const loadCustomOptions = async () => {
+        try {
+            // Clear cache before fetching to get fresh data
+            invalidateCache("custom-options");
+            
+            const customBanks = await getCustomOptions("banks");
+            const customCities = await getCustomOptions("cities");
+            const customDsas = await getCustomOptions("dsas");
+            const customEngineers = await getCustomOptions("engineers");
+
+            // Remove duplicates and add custom options first
+            const uniqueBanks = [...new Set([...(customBanks || []), ...defaultBanks])];
+            const uniqueCities = [...new Set([...(customCities || []), ...defaultCities])];
+            const uniqueDsas = [...new Set([...(customDsas || []), ...defaultDsaNames])];
+            const uniqueEngineers = [...new Set([...(customEngineers || []), ...defaultEngineers])];
+
+            setBanks(uniqueBanks);
+            setCities(uniqueCities);
+            setDsaNames(uniqueDsas);
+            setEngineers(uniqueEngineers);
+        } catch (error) {
+            console.error("Error loading custom options:", error);
+            // Keep default options if load fails
+            setBanks(defaultBanks);
+            setCities(defaultCities);
+            setDsaNames(defaultDsaNames);
+            setEngineers(defaultEngineers);
+        }
+    };
+
+    // Load custom options on component mount and when page becomes visible
+    useEffect(() => {
+        // Load immediately on mount
+        loadCustomOptions();
+        
+        // Reload when browser tab becomes visible
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                loadCustomOptions();
+            }
+        };
+        
+        // Reload when window gains focus
+        const handleFocus = () => {
+            loadCustomOptions();
+        };
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [location.pathname]);
 
     const uniqueId = `FORM-${uuidv4()}`;
     const dateTime = new Date().toLocaleString();
@@ -63,6 +129,9 @@ const FormPage = ({ user, onLogin }) => {
     };
 
     const handleBankChange = (val) => {
+        // Prevent unselecting custom options - only allow selection, not clearing
+        if (bankName === val) return;
+        
         if (val === "other") {
             setBankName("other");
             setFormData(prev => ({ ...prev, bankName: "other", customBankName: "" }));
@@ -73,6 +142,9 @@ const FormPage = ({ user, onLogin }) => {
     };
 
     const handleCityChange = (val) => {
+        // Prevent unselecting custom options - only allow selection, not clearing
+        if (city === val) return;
+        
         if (val === "other") {
             setCity("other");
             setFormData(prev => ({ ...prev, city: "other", customCity: "" }));
@@ -83,6 +155,9 @@ const FormPage = ({ user, onLogin }) => {
     };
 
     const handleDsaChange = (val) => {
+        // Prevent unselecting custom options - only allow selection, not clearing
+        if (dsa === val) return;
+        
         if (val === "other") {
             setDsa("other");
             setFormData(prev => ({ ...prev, dsa: "other", customDsa: "" }));
@@ -93,6 +168,9 @@ const FormPage = ({ user, onLogin }) => {
     };
 
     const handleEngineerChange = (val) => {
+        // Prevent unselecting custom options - only allow selection, not clearing
+        if (engineerName === val) return;
+        
         if (val === "other") {
             setEngineerName("other");
             setFormData(prev => ({ ...prev, engineerName: "other", customEngineerName: "" }));
@@ -108,6 +186,38 @@ const FormPage = ({ user, onLogin }) => {
             ...prev,
             [field]: value
         }));
+    };
+
+    const saveCustomEntry = async (type, value) => {
+        if (!value) return;
+        try {
+            await addCustomOption(type, value);
+            // Clear cache after adding custom option to ensure fresh data
+            invalidateCache("custom-options");
+        } catch (error) {
+            console.error(`Error saving custom ${type}:`, error);
+        }
+    };
+
+    const deleteCustomEntry = async (type, value) => {
+        try {
+            await deleteCustomOption(type, value);
+            invalidateCache("custom-options");
+            
+            if (type === "banks") {
+                setBanks(prev => prev.filter(item => item !== value));
+            } else if (type === "cities") {
+                setCities(prev => prev.filter(item => item !== value));
+            } else if (type === "dsas") {
+                setDsaNames(prev => prev.filter(item => item !== value));
+            } else if (type === "engineers") {
+                setEngineers(prev => prev.filter(item => item !== value));
+            }
+            showSuccess(`${type} option deleted successfully`);
+        } catch (error) {
+            console.error(`Error deleting ${type}:`, error);
+            showError(`Failed to delete ${type} option`);
+        }
     };
 
     const onFinish = async (e) => {
@@ -148,9 +258,38 @@ const FormPage = ({ user, onLogin }) => {
             return;
         }
 
+        // Save custom entries to database and update state (prevent duplicates)
+        if (bankName === "other" && formData.customBankName) {
+            if (!banks.includes(formData.customBankName)) {
+                await saveCustomEntry("banks", formData.customBankName);
+                setBanks(prev => [formData.customBankName, ...prev]);
+            }
+        }
+
+        if (city === "other" && formData.customCity) {
+            if (!cities.includes(formData.customCity)) {
+                await saveCustomEntry("cities", formData.customCity);
+                setCities(prev => [formData.customCity, ...prev]);
+            }
+        }
+
+        if (dsa === "other" && formData.customDsa) {
+            if (!dsaNames.includes(formData.customDsa)) {
+                await saveCustomEntry("dsas", formData.customDsa);
+                setDsaNames(prev => [formData.customDsa, ...prev]);
+            }
+        }
+
+        if (engineerName === "other" && formData.customEngineerName) {
+            if (!engineers.includes(formData.customEngineerName)) {
+                await saveCustomEntry("engineers", formData.customEngineerName);
+                setEngineers(prev => [formData.customEngineerName, ...prev]);
+            }
+        }
+
         try {
             setLoading(true);
-            showLoading("Submitting your form...");
+            dispatch(showLoader("Submitting your form..."));
 
             const payload = {
                 bankName: finalBankName,
@@ -174,22 +313,29 @@ const FormPage = ({ user, onLogin }) => {
                 status: "pending"
             };
 
-            await Promise.all([
+            // Clear draft before API call to avoid race conditions
+            localStorage.removeItem(`valuation_draft_${username}`);
+
+            // Run both requests in parallel
+            const [fileResponse, valuationResponse] = await Promise.all([
                 submitFile(payload),
                 createValuation(payload)
             ]);
 
-            localStorage.removeItem(`valuation_draft_${username}`);
-
             showSuccess("Form submitted successfully!");
+            dispatch(hideLoader());
+            
+            // Keep custom options in state before navigating
+            // This ensures they persist for future use
+            loadCustomOptions();
+            
+            // Navigate after success message
             setTimeout(() => {
-                hideLoading();
-                navigate("/dashboard");
-            }, 500);
+                navigate("/dashboard", { replace: true });
+            }, 300);
         } catch (err) {
             showError(err.message || "Failed to submit form");
-            hideLoading();
-        } finally {
+            dispatch(hideLoader());
             setLoading(false);
         }
     };
@@ -260,16 +406,31 @@ const FormPage = ({ user, onLogin }) => {
                                         <Label className="text-sm font-semibold">Bank Name *</Label>
                                         <div className="grid grid-cols-4 gap-1">
                                             {banks.map(name => (
-                                                <Button
-                                                    key={name}
-                                                    type="button"
-                                                    variant={bankName === name ? "default" : "outline"}
-                                                    className="text-xs h-8"
-                                                    onClick={() => handleBankChange(name)}
-                                                    disabled={!isLoggedIn}
-                                                >
-                                                    {name}
-                                                </Button>
+                                                <div key={name} className="relative group">
+                                                    <Button
+                                                        type="button"
+                                                        variant={bankName === name ? "default" : "outline"}
+                                                        className="text-xs h-8 w-full"
+                                                        onClick={() => handleBankChange(name)}
+                                                        disabled={!isLoggedIn}
+                                                    >
+                                                        {name}
+                                                    </Button>
+                                                    {!defaultBanks.includes(name) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteCustomEntry("banks", name);
+                                                            }}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            disabled={!isLoggedIn}
+                                                            title="Delete this custom option"
+                                                        >
+                                                            <FaTimes className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ))}
                                             <div className="relative">
                                                 {bankName === "other" ? (
@@ -302,16 +463,31 @@ const FormPage = ({ user, onLogin }) => {
                                         <Label className="text-sm font-semibold">City *</Label>
                                         <div className="grid grid-cols-3 gap-1">
                                             {cities.map(name => (
-                                                <Button
-                                                    key={name}
-                                                    type="button"
-                                                    variant={city === name ? "default" : "outline"}
-                                                    className="text-xs h-8"
-                                                    onClick={() => handleCityChange(name)}
-                                                    disabled={!isLoggedIn}
-                                                >
-                                                    {name}
-                                                </Button>
+                                                <div key={name} className="relative group">
+                                                    <Button
+                                                        type="button"
+                                                        variant={city === name ? "default" : "outline"}
+                                                        className="text-xs h-8 w-full"
+                                                        onClick={() => handleCityChange(name)}
+                                                        disabled={!isLoggedIn}
+                                                    >
+                                                        {name}
+                                                    </Button>
+                                                    {!defaultCities.includes(name) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteCustomEntry("cities", name);
+                                                            }}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            disabled={!isLoggedIn}
+                                                            title="Delete this custom option"
+                                                        >
+                                                            <FaTimes className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ))}
                                             <div className="relative">
                                                 {city === "other" ? (
@@ -416,16 +592,31 @@ const FormPage = ({ user, onLogin }) => {
                                         <Label className="text-sm font-semibold">Sales Agent (DSA) *</Label>
                                         <div className="grid grid-cols-4 gap-1">
                                             {dsaNames.map(name => (
-                                                <Button
-                                                    key={name}
-                                                    type="button"
-                                                    variant={dsa === name ? "default" : "outline"}
-                                                    className="text-xs h-8"
-                                                    onClick={() => handleDsaChange(name)}
-                                                    disabled={!isLoggedIn}
-                                                >
-                                                    {name}
-                                                </Button>
+                                                <div key={name} className="relative group">
+                                                    <Button
+                                                        type="button"
+                                                        variant={dsa === name ? "default" : "outline"}
+                                                        className="text-xs h-8 w-full"
+                                                        onClick={() => handleDsaChange(name)}
+                                                        disabled={!isLoggedIn}
+                                                    >
+                                                        {name}
+                                                    </Button>
+                                                    {!defaultDsaNames.includes(name) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteCustomEntry("dsas", name);
+                                                            }}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            disabled={!isLoggedIn}
+                                                            title="Delete this custom option"
+                                                        >
+                                                            <FaTimes className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ))}
                                             <div className="relative">
                                                 {dsa === "other" ? (
@@ -458,16 +649,31 @@ const FormPage = ({ user, onLogin }) => {
                                         <Label className="text-sm font-semibold">Engineer Name *</Label>
                                         <div className="grid grid-cols-4 gap-1">
                                             {engineers.map(name => (
-                                                <Button
-                                                    key={name}
-                                                    type="button"
-                                                    variant={engineerName === name ? "default" : "outline"}
-                                                    className="text-xs h-8"
-                                                    onClick={() => handleEngineerChange(name)}
-                                                    disabled={!isLoggedIn}
-                                                >
-                                                    {name}
-                                                </Button>
+                                                <div key={name} className="relative group">
+                                                    <Button
+                                                        type="button"
+                                                        variant={engineerName === name ? "default" : "outline"}
+                                                        className="text-xs h-8 w-full"
+                                                        onClick={() => handleEngineerChange(name)}
+                                                        disabled={!isLoggedIn}
+                                                    >
+                                                        {name}
+                                                    </Button>
+                                                    {!defaultEngineers.includes(name) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteCustomEntry("engineers", name);
+                                                            }}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            disabled={!isLoggedIn}
+                                                            title="Delete this custom option"
+                                                        >
+                                                            <FaTimes className="h-3 w-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ))}
                                             <div className="relative">
                                                 {engineerName === "other" ? (

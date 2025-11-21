@@ -13,89 +13,87 @@ import fileRoutes from "./routes/fileRoutes.js";
 import valuationRoutes from "./routes/valuationRoutes.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import customOptionsRoutes from "./routes/customOptionsRoutes.js";
 
 // Socket events
 import { setupChatEvents } from "./events/chatEvents.js";
 
-// Load environment variables
 dotenv.config();
 
-// Initialize Express and HTTP Server
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
+
+// Allowed frontend URLs
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:3000"
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  },
+  })
+);
+
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
 });
 
-// Setup Socket.io events
-setupChatEvents(io);
-
-// ❗Try to connect once on startup (non-blocking for Vercel export)
-connectDB().catch((err) => {
-  console.error("Initial DB Connection Error:", err.message);
-});
-
-// Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Middleware to ensure database connection before processing requests
-app.use(async (req, res, next) => {
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      console.log("MongoDB not connected for this request. Reconnecting...");
-      await connectDB();
-    }
-    next();
-  } catch (error) {
-    console.error("Database connection failed for request:", error.message);
-    return res.status(503).json({
-      success: false,
-      message: "Database connection unavailable",
-      error: error.message,
-    });
-  }
-});
-
-// Serve uploaded files as static
 app.use("/api/uploads", express.static("uploads"));
 
-// Main Routes
-app.use("/api/auth", authRoutes);             // Auth Routes
-app.use("/api/files", fileRoutes);            // File Handling Routes
-app.use("/api/valuations", valuationRoutes);  // Valuation Routes
-app.use("/api/images", imageRoutes);          // Image Upload Routes
-app.use("/api/chat", chatRoutes);             // Chat Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/files", fileRoutes);
+app.use("/api/valuations", valuationRoutes);
+app.use("/api/images", imageRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/custom-options", customOptionsRoutes);
 
-// Default route
-app.get("/", (req, res) => {
-  res.send("MERN Backend Running Successfully");
-});
+app.get("/", (req, res) => res.send("MERN Backend Running Successfully"));
 
-// Error handling middleware
+// ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error("Unhandled Error:", err.stack);
   res.status(500).json({ message: "Internal Server Error" });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
+// NOT FOUND
+app.use((req, res) => res.status(404).json({ message: "Route not found" }));
+
+// ------------------------------------------------------------------
+// FIXED: SERVER + DB + SOCKET ORDER
+// ------------------------------------------------------------------
+const io = new Server(httpServer, {
+  cors: { origin: allowedOrigins, credentials: true },
 });
 
-// For Vercel: Export the app
-export default app;
+const startServer = async () => {
+  try {
+    // 1️⃣ CONNECT DB FIRST
+    await connectDB();
+    console.log("MongoDB Connected");
 
-// Start Server (only for local development)
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 5000;
-  httpServer.listen(PORT, () => {
-    console.log("Server running on port", PORT);
-    console.log("WebSocket ready for chat");
-  });
-}
+    // 2️⃣ ONLY AFTER DB READY → START SOCKET EVENTS
+    setupChatEvents(io);
+    console.log("Socket events loaded");
+
+    // 3️⃣ NOW START SERVER
+    const PORT = process.env.PORT || 5000;
+    httpServer.listen(PORT, () => {
+      console.log("Server running on port", PORT);
+    });
+
+  } catch (err) {
+    console.error("❌ Failed to start server:", err.message);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+export default app;

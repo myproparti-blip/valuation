@@ -1,5 +1,9 @@
 import axios from "axios";
 
+// Simple in-memory cache for GET requests
+const requestCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
 });
@@ -21,17 +25,58 @@ api.interceptors.request.use((config) => {
       // Invalid JSON, skip
     }
   }
+
+  // Add cache logic for GET requests
+  if (config.method === 'get') {
+    const cacheKey = `${config.url}?${new URLSearchParams(config.params).toString()}`;
+    const cached = requestCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      // Return cached data without making request
+      return Promise.resolve({
+        data: cached.data,
+        status: 200,
+        statusText: 'OK (Cached)',
+        headers: {},
+        config: config,
+        cached: true
+      });
+    }
+  }
+
   return config;
 });
 
-// Add response interceptor for debugging
+// Add response interceptor with caching
 api.interceptors.response.use(
   (response) => {
+    // Cache successful GET responses
+    if (response.config.method === 'get' && response.status === 200 && !response.cached) {
+      const cacheKey = `${response.config.url}?${new URLSearchParams(response.config.params).toString()}`;
+      requestCache.set(cacheKey, {
+        data: response.data,
+        timestamp: Date.now()
+      });
+    }
     return response;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
+
+// Export cache clear function for manual cleanup
+export const clearCache = () => {
+  requestCache.clear();
+};
+
+// Export cache invalidation function for specific endpoints
+export const invalidateCache = (pattern) => {
+  for (const key of requestCache.keys()) {
+    if (key.includes(pattern)) {
+      requestCache.delete(key);
+    }
+  }
+};
 
 export default api;

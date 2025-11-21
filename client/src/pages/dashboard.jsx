@@ -4,18 +4,21 @@ import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar,
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../components/ui";
 import { getAllValuations } from "../services/valuationservice";
-import { useLoading } from "../context/LoadingContext";
 import { generateRecordPDF } from "../services/pdfExport";
 import { logoutUser } from "../services/auth";
 import { showLoader, hideLoader } from "../redux/slices/loaderSlice";
 import { setCurrentPage, setTotalItems } from "../redux/slices/paginationSlice";
+import { invalidateCache } from "../services/axios";
+import { useNotification } from "../context/NotificationContext";
 import Pagination from "../components/Pagination";
 import LoginModal from "../components/LoginModal";
 import ChatModal from "../components/Chat/ChatModal";
+import SearchBar from "../components/SearchBar";
 
 const DashboardPage = ({ user, onLogout, onLogin }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const { showSuccess } = useNotification();
     const { currentPage, itemsPerPage, totalItems } = useSelector((state) => state.pagination);
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -31,7 +34,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     const [sortField, setSortField] = useState("createdAt");
     const [sortOrder, setSortOrder] = useState("desc");
     const [chatModalOpen, setChatModalOpen] = useState(false);
-    const { hideLoading } = useLoading();
+    const [selectedRows, setSelectedRows] = useState(new Set());
     const username = user?.username || "";
     const role = user?.role || "";
     const isLoggedIn = !!user;
@@ -137,13 +140,16 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     }, [statusFilter, cityFilter, bankFilter, engineerFilter, dispatch]);
 
     useEffect(() => {
-        // Fetch files on component mount only
+        // Fetch files on component mount only - with cache invalidation
         if (!isMountedRef.current) {
             isMountedRef.current = true;
+            // Clear any cached valuation data to ensure fresh data on mount
+            invalidateCache("/valuations");
+            // Show loading state during initial fetch
+            dispatch(showLoader("Loading"));
             fetchFiles(true);
-            hideLoading();
         }
-    }, [hideLoading]);
+    }, [dispatch]);
 
     useEffect(() => {
         // Duration update interval - update every second for real-time display
@@ -162,6 +168,8 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                 setLoading(true);
                 dispatch(showLoader("Fetching valuations..."));
             }
+            // Invalidate cache before fetching to ensure fresh data
+            invalidateCache("/valuations");
             const data = await getAllValuations();
             const filesList = Array.isArray(data) ? data : [];
             setFiles(filesList);
@@ -173,7 +181,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         } catch (err) {
             // Error fetching valuations
         } finally {
-            if (!isInitial && showLoadingIndicator) {
+            if (showLoadingIndicator) {
                 setLoading(false);
                 dispatch(hideLoader());
             }
@@ -227,6 +235,42 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         }
     };
 
+    const handleCheckboxChange = (recordId) => {
+        setSelectedRows(prev => {
+            const newSelected = new Set(prev);
+            const isChecking = !newSelected.has(recordId);
+            
+            // Update selection state
+            if (isChecking) {
+                newSelected.add(recordId);
+                // Copy ONLY when checkbox is being CHECKED
+                const selectedRecords = files.filter(r => newSelected.has(r._id));
+                if (selectedRecords.length > 0) {
+                    handleCopyToClipboard(selectedRecords);
+                }
+            } else {
+                newSelected.delete(recordId);
+            }
+            
+            // Return the updated set
+            return newSelected;
+        });
+    };
+
+    const handleCopyToClipboard = (records) => {
+        if (!Array.isArray(records) || records.length === 0) return;
+        
+        const textToCopy = records.map(record => 
+            `Client Name: ${record.clientName}\nPhone Number: ${record.mobileNumber}\nBank Name: ${record.bankName}\nClient Address: ${record.address}`
+        ).join("\n\n---\n\n");
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showSuccess(`${records.length} record(s) copied!`);
+        }).catch(() => {
+            showSuccess("Failed to copy");
+        });
+    };
+
     const pendingCount = files.filter(f => f.status === "pending").length;
     const onProgressCount = files.filter(f => f.status === "on-progress").length;
     const approvedCount = files.filter(f => f.status === "approved").length;
@@ -256,68 +300,76 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
             {/* Header */}
             <header className="bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white shadow-2xl sticky top-0 z-40 border-b-4 border-blue-800">
-                <div className="px-3 sm:px-6 py-3 sm:py-5 flex items-center justify-between flex-wrap gap-2 sm:gap-4">
-                    <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                            <div className="text-2xl sm:text-3xl flex-shrink-0 text-emerald-300 drop-shadow-lg">
-                                <FaChartBar />
+                <div className="px-3 sm:px-6 py-3 sm:py-5 flex flex-col gap-3 sm:gap-4">
+                    {/* Top Row - Logo and Controls */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                <div className="text-2xl sm:text-3xl flex-shrink-0 text-emerald-300 drop-shadow-lg">
+                                    <FaChartBar />
+                                </div>
+                                <div className="min-w-0">
+                                    <h1 className="text-lg sm:text-2xl font-bold tracking-tight truncate">Valuation Dashboard</h1>
+                                    <p className="text-xs sm:text-sm text-white/85 truncate font-medium">
+                                        {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="min-w-0">
-                                <h1 className="text-lg sm:text-2xl font-bold tracking-tight truncate">Valuation Dashboard</h1>
-                                <p className="text-xs sm:text-sm text-white/85 truncate font-medium">
-                                    {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
-                                </p>
-                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+                            {isLoggedIn && (role === "user" || role === "admin" || ["manager1", "manager2"].includes(role)) && (
+                                <>
+                                    <Button
+                                        onClick={() => navigate("/valuationform")}
+                                        className="bg-white text-blue-600 hover:bg-emerald-100 hover:text-emerald-700 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 font-semibold shadow-md hover:shadow-lg transition-all"
+                                    >
+                                        <FaPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                        <span className="hidden sm:inline">New Form</span>
+                                    </Button>
+
+                                    <div className="h-8 sm:h-10 w-px bg-white/30"></div>
+                                </>
+                            )}
+
+                            {!isLoggedIn ? (
+                                <Button
+                                    onClick={() => setLoginModalOpen(true)}
+                                    className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 flex items-center gap-1 sm:gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
+                                    title="Login"
+                                >
+                                    <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Login</span>
+                                </Button>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2 sm:gap-3 bg-white/10 px-3 py-1 rounded-lg">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-300 to-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-blue-900 shadow-md">
+                                            <span className="text-xs sm:text-sm">{username[0]?.toUpperCase()}</span>
+                                        </div>
+                                        <div className="hidden sm:block min-w-0">
+                                            <p className="text-xs sm:text-sm font-semibold truncate">{username}</p>
+                                            <p className="text-xs text-white/75 uppercase tracking-wider truncate font-medium">{role}</p>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-white hover:bg-red-500/20 hover:text-red-200 h-8 w-8 sm:h-10 sm:w-10 transition-colors"
+                                        onClick={() => setLogoutModalOpen(true)}
+                                        title="Logout"
+                                    >
+                                        <FaSignOutAlt className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-                        {isLoggedIn && (role === "user" || role === "admin" || ["manager1", "manager2"].includes(role)) && (
-                            <>
-                                <Button
-                                    onClick={() => navigate("/valuationform")}
-                                    className="bg-white text-blue-600 hover:bg-emerald-100 hover:text-emerald-700 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 font-semibold shadow-md hover:shadow-lg transition-all"
-                                >
-                                    <FaPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                    <span className="hidden sm:inline">New Form</span>
-                                </Button>
-
-                                <div className="h-8 sm:h-10 w-px bg-white/30"></div>
-                            </>
-                        )}
-
-                        {!isLoggedIn ? (
-                            <Button
-                                onClick={() => setLoginModalOpen(true)}
-                                className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 flex items-center gap-1 sm:gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
-                                title="Login"
-                            >
-                                <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
-                                <span className="hidden sm:inline">Login</span>
-                            </Button>
-                        ) : (
-                            <>
-                                <div className="flex items-center gap-2 sm:gap-3 bg-white/10 px-3 py-1 rounded-lg">
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-300 to-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-blue-900 shadow-md">
-                                        <span className="text-xs sm:text-sm">{username[0]?.toUpperCase()}</span>
-                                    </div>
-                                    <div className="hidden sm:block min-w-0">
-                                        <p className="text-xs sm:text-sm font-semibold truncate">{username}</p>
-                                        <p className="text-xs text-white/75 uppercase tracking-wider truncate font-medium">{role}</p>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-white hover:bg-red-500/20 hover:text-red-200 h-8 w-8 sm:h-10 sm:w-10 transition-colors"
-                                    onClick={() => setLogoutModalOpen(true)}
-                                    title="Logout"
-                                >
-                                    <FaSignOutAlt className="h-4 w-4 sm:h-5 sm:w-5" />
-                                </Button>
-                            </>
-                        )}
+                    {/* Search Bar Row */}
+                    <div className="flex items-center justify-center w-full">
+                        <SearchBar data={files} />
                     </div>
                 </div>
             </header>
@@ -428,7 +480,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => fetchFiles(false)}
+                                onClick={() => fetchFiles(false, true)}
                                 disabled={loading}
                                 className="text-xs sm:text-sm px-2 sm:px-3"
                             >
@@ -444,13 +496,13 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
-                                            <TableRow className="hover:bg-transparent">
-                                                <TableHead className="min-w-[120px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("uniqueId")}>
-                                                    <div className="flex items-center gap-1">Form ID {sortField === "uniqueId" && <FaSort className="h-3 w-3" />}</div>
-                                                </TableHead>
-                                                <TableHead className="min-w-[100px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("clientName")}>
-                                                    <div className="flex items-center gap-1">Client Name {sortField === "clientName" && <FaSort className="h-3 w-3" />}</div>
-                                                </TableHead>
+                                             <TableRow className="hover:bg-transparent">
+                                                 <TableHead className="min-w-[50px] text-xs sm:text-sm">
+                                                     <div className="flex items-center gap-1">Copy</div>
+                                                 </TableHead>
+                                                 <TableHead className="min-w-[100px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("clientName")}>
+                                                     <div className="flex items-center gap-1">Client Name {sortField === "clientName" && <FaSort className="h-3 w-3" />}</div>
+                                                 </TableHead>
                                                 <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("address")}>
                                                     <div className="flex items-center gap-1"> Client Address {sortField === "address" && <FaSort className="h-3 w-3" />}</div>
                                                 </TableHead>
@@ -516,10 +568,17 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {paginatedFiles.map((record) => (
-                                                <TableRow key={record._id}>
-                                                    <TableCell className="font-mono text-xs">{record.uniqueId?.substring(0, 10)}...</TableCell>
-                                                    <TableCell className={`text-sm font-bold text-slate-950 ${record.address && record.address.length > 50 ? 'whitespace-normal' : ''}`}>{record.clientName}</TableCell>
+                                             {paginatedFiles.map((record) => (
+                                                 <TableRow key={record._id}>
+                                                     <TableCell className="text-sm text-center">
+                                                         <input
+                                                             type="checkbox"
+                                                             checked={selectedRows.has(record._id)}
+                                                             onChange={() => handleCheckboxChange(record._id)}
+                                                             className="w-4 h-4 cursor-pointer"
+                                                         />
+                                                     </TableCell>
+                                                     <TableCell className={`text-sm font-bold text-slate-950 ${record.address && record.address.length > 50 ? 'whitespace-normal' : ''}`}>{record.clientName}</TableCell>
                                                     <TableCell className={`text-sm font-semibold text-slate-950 ${record.address && record.address.length > 50 ? 'max-w-[200px] whitespace-normal break-words' : 'max-w-[140px] truncate'}`}>{record.address}</TableCell>
                                                     <TableCell className="text-sm">{record.city}</TableCell>
                                                     <TableCell className="text-sm">{record.bankName}</TableCell>
@@ -703,5 +762,4 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         </div>
     );
 };
-
 export default DashboardPage;

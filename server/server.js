@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import mongoose from "mongoose";
 import connectDB from "./config/db.js";
+import mongoose from "mongoose";
 
 // Routes
 import authRoutes from "./routes/authRoutes.js";
@@ -15,7 +15,7 @@ import imageRoutes from "./routes/imageRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import customOptionsRoutes from "./routes/customOptionsRoutes.js";
 
-// Socket events
+// Socket
 import { setupChatEvents } from "./events/chatEvents.js";
 
 dotenv.config();
@@ -23,30 +23,42 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-// Allowed frontend URLs
+// Allowed frontend URL(s)
 const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:3000"
-];
+  process.env.CLIENT_URL,
+  "http://localhost:3000",
+  "http://localhost:5173",
+].filter(Boolean);
 
+// --------------------
+// CORS (Fix)
+// --------------------
 app.use(
   cors({
     origin: allowedOrigins,
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
 
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") return res.sendStatus(204);
-  next();
-});
+// OPTIONS FIX — prevents 500 on Vercel/Node 22
+app.options("*", cors());
 
-app.use(express.json());
+// ----------------------
+// JSON PARSERS
+// ----------------------
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+// ----------------------
+// STATIC FILES
+// ----------------------
 app.use("/api/uploads", express.static("uploads"));
 
+// ----------------------
+// ROUTES
+// ----------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/valuations", valuationRoutes);
@@ -54,42 +66,54 @@ app.use("/api/images", imageRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/custom-options", customOptionsRoutes);
 
-app.get("/", (req, res) => res.send("MERN Backend Running Successfully"));
+app.get("/", (req, res) => {
+  res.send("MERN Backend Running Successfully");
+});
 
+// ----------------------
 // ERROR HANDLER
+// ----------------------
 app.use((err, req, res, next) => {
-  console.error("Unhandled Error:", err.stack);
+  console.error("Unhandled Error:", err);
   res.status(500).json({ message: "Internal Server Error" });
 });
 
+// ----------------------
 // NOT FOUND
-app.use((req, res) => res.status(404).json({ message: "Route not found" }));
-
-// ------------------------------------------------------------------
-// FIXED: SERVER + DB + SOCKET ORDER
-// ------------------------------------------------------------------
-const io = new Server(httpServer, {
-  cors: { origin: allowedOrigins, credentials: true },
+// ----------------------
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
 });
 
+// ----------------------
+// SOCKET.IO
+// ----------------------
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+});
+
+// ----------------------
+// START SERVER
+// ----------------------
 const startServer = async () => {
   try {
-    // 1️⃣ CONNECT DB FIRST
     await connectDB();
     console.log("MongoDB Connected");
 
-    // 2️⃣ ONLY AFTER DB READY → START SOCKET EVENTS
+    // Load socket events after DB ready
     setupChatEvents(io);
     console.log("Socket events loaded");
 
-    // 3️⃣ NOW START SERVER
     const PORT = process.env.PORT || 5000;
-    httpServer.listen(PORT, () => {
-      console.log("Server running on port", PORT);
-    });
 
-  } catch (err) {
-    console.error("❌ Failed to start server:", err.message);
+    httpServer.listen(PORT, () => {
+      console.log("🚀 Server running on port", PORT);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error.message);
     process.exit(1);
   }
 };

@@ -1122,62 +1122,60 @@ const EditValuationPage = ({ user, onLogin }) => {
                                     </div>
                                 </CardContent>
                             </Card>
-                            {/* Coordinates Card - Always show if we have coordinates or location images */}
-                            {(formData.coordinates.latitude || formData.coordinates.longitude || locationImagePreviews.length > 0) && (
-                                <Card className="border">
-                                    <CardHeader className="border-b">
-                                        <CardTitle className="flex items-center gap-2">
-                                            <FaLocationArrow className="h-5 w-5" />
-                                            GPS Coordinates
-                                            {formData.coordinates.latitude && formData.coordinates.longitude && " (from image metadata)"}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-6">
-                                        <div className="space-y-6">
-                                            {/* Coordinate Input Fields */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <Label className="text-sm font-medium text-gray-700">Latitude</Label>
-                                                    <Input
-                                                        placeholder="Enter latitude"
-                                                        value={formData.coordinates.latitude || ''}
-                                                        onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
-                                                        className="mt-2"
-                                                        disabled={!canEdit}
-                                                    />
-                                                    {formData.coordinates.latitude && (
-                                                        <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs">
-                                                            <p className="font-semibold text-green-900">
-                                                                Latitude: {parseFloat(formData.coordinates.latitude).toFixed(6)}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <Label className="text-sm font-medium text-gray-700">Longitude</Label>
-                                                    <Input
-                                                        placeholder="Enter longitude"
-                                                        value={formData.coordinates.longitude || ''}
-                                                        onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
-                                                        className="mt-2"
-                                                        disabled={!canEdit}
-                                                    />
-                                                    {formData.coordinates.longitude && (
-                                                        <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs">
-                                                            <p className="font-semibold text-green-900">
-                                                                Longitude: {parseFloat(formData.coordinates.longitude).toFixed(6)}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
+                            {/* Coordinates Card - Always show for location images section */}
+                             <Card className="border">
+                                 <CardHeader className="border-b">
+                                     <CardTitle className="flex items-center gap-2">
+                                         <FaLocationArrow className="h-5 w-5" />
+                                         GPS Coordinates
+                                         {formData.coordinates.latitude && formData.coordinates.longitude && " (from image metadata)"}
+                                     </CardTitle>
+                                 </CardHeader>
+                                 <CardContent className="p-6">
+                                     <div className="space-y-6">
+                                         {/* Coordinate Input Fields */}
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                             <div>
+                                                 <Label className="text-sm font-medium text-gray-700">Latitude</Label>
+                                                 <Input
+                                                     placeholder="Enter latitude"
+                                                     value={formData.coordinates.latitude || ''}
+                                                     onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
+                                                     className="mt-2"
+                                                     disabled={!canEdit}
+                                                 />
+                                                 {formData.coordinates.latitude && (
+                                                     <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs">
+                                                         <p className="font-semibold text-green-900">
+                                                             Latitude: {parseFloat(formData.coordinates.latitude).toFixed(6)}
+                                                         </p>
+                                                     </div>
+                                                 )}
+                                             </div>
+                                             <div>
+                                                 <Label className="text-sm font-medium text-gray-700">Longitude</Label>
+                                                 <Input
+                                                     placeholder="Enter longitude"
+                                                     value={formData.coordinates.longitude || ''}
+                                                     onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
+                                                     className="mt-2"
+                                                     disabled={!canEdit}
+                                                 />
+                                                 {formData.coordinates.longitude && (
+                                                     <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs">
+                                                         <p className="font-semibold text-green-900">
+                                                             Longitude: {parseFloat(formData.coordinates.longitude).toFixed(6)}
+                                                         </p>
+                                                     </div>
+                                                 )}
+                                             </div>
+                                         </div>
 
 
 
                                         </div>
                                     </CardContent>
                                 </Card>
-                            )}
                         </div>
                     </CardContent>
                 </Card>

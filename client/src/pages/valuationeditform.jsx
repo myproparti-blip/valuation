@@ -91,8 +91,9 @@ const EditValuationPage = ({ user, onLogin }) => {
         });
     };
 
+   
     const banks = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB"];
-    const cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Hyderabad"];
+    const cities = ["Surat", "vadodara", "Ahmedabad", "Kheda",];
     const dsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
 
     useEffect(() => {

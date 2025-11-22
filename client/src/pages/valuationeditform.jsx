@@ -17,7 +17,10 @@ import {
     FaImage,
     FaLocationArrow,
     FaCheckCircle,
-    FaTimesCircle
+    FaTimesCircle,
+    FaSave,
+    FaThumbsUp,
+    FaThumbsDown
 } from "react-icons/fa";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Textarea, Label, Badge, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, RadioGroup, RadioGroupItem } from "../components/ui";
 import { getValuationById, updateValuation, managerSubmit } from "../services/valuationservice";
@@ -607,79 +610,21 @@ const EditValuationPage = ({ user, onLogin }) => {
             )}
             <div className="max-w-7xl mx-auto space-y-6">
 
-                {/* Header Card with DORBYMICA Branding */}
+                {/* Header Card */}
                 <Card>
-                    <CardContent className="p-8">
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                            {/* DORBYMICA Branding */}
-                            <div className="text-center md:text-left">
-                                <div className="branding-section mb-4">
-                                    <div className="logo-lines text-sm text-gray-600 tracking-wider font-bold">
-                                        <div>www.do</div>
-                                        <div>pers.co</div>
-                                    </div>
-                                    <div className="company-name text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mt-2">DORBYMICA</div>
-                                    <div className="tagline text-lg font-semibold text-gray-600 mt-2">IMAGINE IMPLEMENT</div>
-                                </div>
-                            </div>
-
-                            {/* Header Content */}
-                            <div className="flex-1 text-center md:text-right">
-                                <div className="flex items-center justify-center md:justify-end gap-4 mb-6">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={() => navigate("/dashboard")}
-                                        className="rounded-lg"
-                                    >
-                                        <FaArrowLeft className="h-4 w-4" />
-                                    </Button>
-                                    <div>
-                                        <h1 className="text-4xl font-bold text-gray-900">Edit Valuation Form</h1>
-                                        <p className="text-sm text-gray-600 mt-2 font-mono bg-gray-100 px-3 py-1 rounded inline-block">ID: {valuation.uniqueId}</p>
-                                    </div>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex flex-wrap gap-3 justify-center md:justify-end">
-
-
-                                    {canEdit && (
-                                        <Button
-                                            type="button"
-                                            size="lg"
-                                            onClick={onFinish}
-                                            disabled={loading}
-                                            className="flex items-center gap-2 rounded-lg font-semibold"
-                                        >
-                                            <FaDownload className="h-4 w-4" />
-                                            {loading ? "Saving..." : "Save Changes"}
-                                        </Button>
-                                    )}
-
-                                    {canApprove && (
-                                        <>
-                                            <Button
-                                                type="button"
-                                                size="lg"
-                                                className="flex items-center gap-2 rounded-lg font-semibold"
-                                                onClick={() => handleManagerAction("approve")}
-                                                disabled={loading}
-                                            >
-                                                ✓ Approve
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="lg"
-                                                onClick={() => handleManagerAction("reject")}
-                                                disabled={loading}
-                                                className="flex items-center gap-2 rounded-lg font-semibold"
-                                            >
-                                                ✕ Reject
-                                            </Button>
-                                        </>
-                                    )}
-                                </div>
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => navigate("/dashboard")}
+                                className="rounded-lg"
+                            >
+                                <FaArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Edit Valuation Form</h1>
+                                <p className="text-sm text-gray-600 mt-1 font-mono bg-gray-100 px-3 py-1 rounded inline-block">ID: {valuation.uniqueId}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -1320,6 +1265,47 @@ const EditValuationPage = ({ user, onLogin }) => {
                     </CardContent>
                 </Card>
 
+            </div>
+
+            {/* Floating Action Buttons - Right Side */}
+            <div className="fixed right-6 bottom-6 flex flex-col gap-4 z-40">
+                {canEdit && (
+                    <Button
+                        type="button"
+                        size="icon"
+                        onClick={onFinish}
+                        disabled={loading}
+                        className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+                        title="Save Changes"
+                    >
+                        <FaSave className="h-6 w-6" />
+                    </Button>
+                )}
+
+                {canApprove && (
+                    <>
+                        <Button
+                            type="button"
+                            size="icon"
+                            onClick={() => handleManagerAction("approve")}
+                            disabled={loading}
+                            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow bg-green-600 hover:bg-green-700"
+                            title="Approve Form"
+                        >
+                            <FaThumbsUp className="h-6 w-6" />
+                        </Button>
+                        <Button
+                            type="button"
+                            size="icon"
+                            onClick={() => handleManagerAction("reject")}
+                            disabled={loading}
+                            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow bg-red-600 hover:bg-red-700"
+                            title="Reject Form"
+                        >
+                            <FaThumbsDown className="h-6 w-6" />
+                        </Button>
+                    </>
+                )}
             </div>
 
             {/* Approval/Rejection Dialog */}

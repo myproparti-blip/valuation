@@ -44,9 +44,9 @@ const FormPage = ({ user, onLogin }) => {
     const role = user?.role || "";
 
     const defaultBanks = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB"];
-    const defaultCities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata"];
+    const defaultCities = ["Surat", "vadodara", "Ahmedabad", "Kheda",];
     const defaultDsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
-    const defaultEngineers = ["Engineer A", "Engineer B", "Engineer C"];
+    const defaultEngineers = ["Bhavesh", "Bhanu", "Ronak","Mukesh"];
 
     const [banks, setBanks] = useState([...defaultBanks]);
     const [cities, setCities] = useState([...defaultCities]);

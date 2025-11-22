@@ -35,13 +35,13 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     const [sortOrder, setSortOrder] = useState("desc");
     const [chatModalOpen, setChatModalOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState(new Set());
+    const [copiedRows, setCopiedRows] = useState(new Map()); // Map<id, rowData>
     const username = user?.username || "";
     const role = user?.role || "";
     const isLoggedIn = !!user;
     const pollIntervalRef = useRef(null);
     const durationIntervalRef = useRef(null);
     const isMountedRef = useRef(false);
-
     // Handle sorting
     const handleSort = (field) => {
         if (sortField === field) {
@@ -133,6 +133,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     const uniqueCities = [...new Set(files.map(f => f.city).filter(c => c && c.trim()))].sort();
     const uniqueBanks = [...new Set(files.map(f => f.bankName).filter(b => b && b.trim()))].sort();
     const uniqueEngineers = [...new Set(files.map(f => f.engineerName).filter(e => e && e.trim()))].sort();
+
 
     // Reset to page 1 when filter changes
     useEffect(() => {
@@ -234,36 +235,50 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
             // PDF generation error
         }
     };
-
+    // Bulletproof checkbox → copy logic with atomic state management
     const handleCheckboxChange = (recordId) => {
         setSelectedRows(prev => {
             const newSelected = new Set(prev);
-            const isChecking = !newSelected.has(recordId);
-            
-            // Update selection state
-            if (isChecking) {
-                newSelected.add(recordId);
-                // Copy ONLY when checkbox is being CHECKED
-                const selectedRecords = files.filter(r => newSelected.has(r._id));
-                if (selectedRecords.length > 0) {
-                    handleCopyToClipboard(selectedRecords);
-                }
-            } else {
+            let isAdding = false;
+
+            if (newSelected.has(recordId)) {
+                // UNCHECKING: delete and remove from copied data
                 newSelected.delete(recordId);
+            } else {
+                // CHECKING: add and copy row data
+                newSelected.add(recordId);
+                isAdding = true;
             }
-            
-            // Return the updated set
+
+            // ATOMIC UPDATE: modify copiedRows in sync with selectedRows
+            setCopiedRows(prevCopied => {
+                const newCopied = new Map(prevCopied);
+
+                if (isAdding) {
+                    // Find the row data from authoritative source (files) at moment of state update
+                    const rowData = files.find(f => f._id === recordId);
+                    if (rowData) {
+                        newCopied.set(recordId, rowData);
+                    }
+                } else {
+                    // Remove copied data immediately when unchecking
+                    newCopied.delete(recordId);
+                }
+
+                return newCopied;
+            });
+
             return newSelected;
         });
     };
 
     const handleCopyToClipboard = (records) => {
         if (!Array.isArray(records) || records.length === 0) return;
-        
-        const textToCopy = records.map(record => 
+
+        const textToCopy = records.map(record =>
             `Client Name: ${record.clientName}\nPhone Number: ${record.mobileNumber}\nBank Name: ${record.bankName}\nClient Address: ${record.address}`
         ).join("\n\n---\n\n");
-        
+
         navigator.clipboard.writeText(textToCopy).then(() => {
             showSuccess(`${records.length} record(s) copied!`);
         }).catch(() => {
@@ -281,36 +296,37 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     const StatCard = ({ title, value, color, status, icon: Icon }) => (
         <Card
             onClick={() => setStatusFilter(statusFilter === status ? null : status)}
-            className={`overflow-hidden hover:shadow-xl transition-all cursor-pointer hover:scale-105 ${statusFilter === status ? 'ring-2 ring-primary shadow-xl' : ''}`}
+            className={`overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-l-4 relative group ${statusFilter === status ? `border-l-${color.split('-')[1]} ring-2 ring-blue-200 shadow-2xl scale-105` : 'border-l-gray-200 hover:border-l-blue-500'}`}
         >
-            <div className={`h-2 sm:h-3 bg-gradient-to-r ${color}`}></div>
+            <div className={`h-1 sm:h-1.5 bg-gradient-to-r ${color} group-hover:h-2 transition-all duration-300`}></div>
             <CardContent className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-1 sm:mb-2 truncate uppercase tracking-wider">{title}</p>
-                        <p className={`text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}>{value}</p>
+                        <p className="text-xs sm:text-sm font-bold text-slate-600 mb-2 sm:mb-3 truncate uppercase tracking-widest letter-spacing-1">{title}</p>
+                        <p className={`text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r ${color} bg-clip-text text-transparent`}>{value}</p>
                     </div>
-                    {Icon && <Icon className={`h-6 w-6 sm:h-8 sm:w-8 opacity-20 flex-shrink-0`} />}
+                    {Icon && <Icon className={`h-8 w-8 sm:h-10 sm:w-10 opacity-30 flex-shrink-0 group-hover:opacity-50 transition-opacity`} />}
                 </div>
+                <div className={`mt-4 h-1 bg-gradient-to-r ${color} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
             </CardContent>
         </Card>
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
             {/* Header */}
-            <header className="bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white shadow-2xl sticky top-0 z-40 border-b-4 border-blue-800">
+            <header className="bg-gradient-to-r from-slate-800 via-slate-850 to-slate-900 text-white shadow-2xl sticky top-0 z-40 border-b-4 border-blue-600">
                 <div className="px-3 sm:px-6 py-3 sm:py-5 flex flex-col gap-3 sm:gap-4">
                     {/* Top Row - Logo and Controls */}
                     <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
                         <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                <div className="text-2xl sm:text-3xl flex-shrink-0 text-emerald-300 drop-shadow-lg">
+                                <div className="text-3xl sm:text-4xl flex-shrink-0 text-blue-300 drop-shadow-xl transform hover:scale-110 transition-transform duration-300">
                                     <FaChartBar />
                                 </div>
                                 <div className="min-w-0">
-                                    <h1 className="text-lg sm:text-2xl font-bold tracking-tight truncate">Valuation Dashboard</h1>
-                                    <p className="text-xs sm:text-sm text-white/85 truncate font-medium">
+                                    <h1 className="text-xl sm:text-3xl font-black tracking-tight truncate text-white">Valuation Dashboard</h1>
+                                    <p className="text-xs sm:text-sm text-blue-100 truncate font-semibold mt-0.5">
                                         {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
                                     </p>
                                 </div>
@@ -322,9 +338,9 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                 <>
                                     <Button
                                         onClick={() => navigate("/valuationform")}
-                                        className="bg-white text-blue-600 hover:bg-emerald-100 hover:text-emerald-700 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 font-semibold shadow-md hover:shadow-lg transition-all"
+                                        className="bg-white text-slate-800 hover:bg-blue-50 hover:text-blue-700 hover:shadow-xl text-xs sm:text-sm px-3 sm:px-5 h-9 sm:h-10 font-bold shadow-lg transition-all duration-300 border border-blue-100"
                                     >
-                                        <FaPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                        <FaPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
                                         <span className="hidden sm:inline">New Form</span>
                                     </Button>
 
@@ -335,17 +351,17 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                             {!isLoggedIn ? (
                                 <Button
                                     onClick={() => setLoginModalOpen(true)}
-                                    className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 flex items-center gap-1 sm:gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
+                                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 hover:shadow-xl text-xs sm:text-sm px-3 sm:px-5 h-9 sm:h-10 flex items-center gap-2 font-bold shadow-lg transition-all duration-300 border border-blue-700"
                                     title="Login"
                                 >
-                                    <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <FaLock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     <span className="hidden sm:inline">Login</span>
                                 </Button>
                             ) : (
                                 <>
-                                    <div className="flex items-center gap-2 sm:gap-3 bg-white/10 px-3 py-1 rounded-lg">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-300 to-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-blue-900 shadow-md">
-                                            <span className="text-xs sm:text-sm">{username[0]?.toUpperCase()}</span>
+                                    <div className="flex items-center gap-2 sm:gap-3 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-300">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-300 to-blue-500 flex items-center justify-center flex-shrink-0 font-bold text-white shadow-lg border border-blue-200">
+                                            <span className="text-xs sm:text-sm font-black">{username[0]?.toUpperCase()}</span>
                                         </div>
                                         <div className="hidden sm:block min-w-0">
                                             <p className="text-xs sm:text-sm font-semibold truncate">{username}</p>
@@ -356,7 +372,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-white hover:bg-red-500/20 hover:text-red-200 h-8 w-8 sm:h-10 sm:w-10 transition-colors"
+                                        className="text-white hover:bg-red-500/30 hover:text-red-100 h-9 w-9 sm:h-10 sm:w-10 transition-all duration-300 hover:shadow-lg rounded-lg"
                                         onClick={() => setLogoutModalOpen(true)}
                                         title="Logout"
                                     >
@@ -375,91 +391,99 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
             </header>
 
             {/* Main Content */}
-            <main className="p-2 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
+            <main className="p-3 sm:p-5 md:p-8 space-y-4 sm:space-y-5 md:space-y-8">
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                     <StatCard
                         title="Pending"
                         value={pendingCount}
-                        color="from-orange-400 to-orange-600"
+                        color="from-amber-500 to-amber-700"
                         status="pending"
                         icon={FaClock}
                     />
                     <StatCard
                         title="In Progress"
                         value={onProgressCount}
-                        color="from-blue-400 to-blue-600"
+                        color="from-blue-600 to-blue-800"
                         status="on-progress"
                         icon={FaSpinner}
                     />
                     <StatCard
                         title="Approved"
                         value={approvedCount}
-                        color="from-green-400 to-green-600"
+                        color="from-emerald-600 to-emerald-800"
                         status="approved"
                         icon={FaCheckCircle}
                     />
                     <StatCard
                         title="Rejected"
                         value={rejectedCount}
-                        color="from-red-400 to-red-600"
+                        color="from-rose-600 to-rose-800"
                         status="rejected"
                         icon={FaTimesCircle}
                     />
                 </div>
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                    <Card className="hover:shadow-lg transition-all">
-                        <CardHeader className="pb-2 sm:pb-3">
-                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                                <FaChartBar className="text-primary" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-8">
+                    <Card className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-blue-500 group">
+                        <CardHeader className="pb-3 sm:pb-4 border-b border-slate-100">
+                            <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-3 text-slate-900">
+                                <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                                    <FaChartBar className="text-blue-600 text-lg" />
+                                </div>
                                 Total Submissions
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2">
-                                <p className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{totalCount}</p>
-                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Forms submitted in total</p>
+                        <CardContent className="pt-4 sm:pt-6">
+                            <div className="space-y-3">
+                                <p className="text-5xl sm:text-6xl font-black bg-gradient-to-r from-slate-800 to-blue-700 bg-clip-text text-transparent">{totalCount}</p>
+                                <p className="text-xs sm:text-sm text-slate-600 font-semibold">Forms submitted in total</p>
+                                <div className="h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full w-12 group-hover:w-20 transition-all duration-300"></div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="hover:shadow-lg transition-all">
-                        <CardHeader className="pb-2 sm:pb-3">
-                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                                <FaCheckCircle className="text-success" />
+                    <Card className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-emerald-500 group">
+                        <CardHeader className="pb-3 sm:pb-4 border-b border-slate-100">
+                            <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-3 text-slate-900">
+                                <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
+                                    <FaCheckCircle className="text-emerald-600 text-lg" />
+                                </div>
                                 Completion Rate
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3">
+                        <CardContent className="pt-4 sm:pt-6">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4">
                                     <div className="flex-1">
-                                        <div className="w-full h-4 bg-muted rounded-full overflow-hidden shadow-sm">
+                                        <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden shadow-sm border border-slate-300">
                                             <div
-                                                className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500 rounded-full"
+                                                className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-500 rounded-full shadow-md"
                                                 style={{ width: `${completionRate}%` }}
                                             ></div>
                                         </div>
                                     </div>
-                                    <p className="text-3xl sm:text-4xl font-bold text-emerald-600 min-w-max">{completionRate}%</p>
+                                    <p className="text-4xl sm:text-5xl font-black text-emerald-600 min-w-max">{completionRate}%</p>
                                 </div>
-                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">{approvedCount + rejectedCount} of {totalCount} completed</p>
+                                <p className="text-xs sm:text-sm text-slate-600 font-semibold">{approvedCount + rejectedCount} of {totalCount} completed</p>
+                                <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full w-12 group-hover:w-20 transition-all duration-300"></div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
                 {/* Data Table */}
-                <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all">
-                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+                <Card className="overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 border-t-blue-600">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-gradient-to-r from-blue-50 via-white to-slate-50 border-b-2 border-blue-200 py-5 sm:py-6">
                         <div>
-                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                                <FaEye className="text-primary" />
+                            <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-3 text-slate-900">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                    <FaEye className="text-blue-600 text-lg" />
+                                </div>
                                 Valuation Forms
                             </CardTitle>
-                            <CardDescription className="text-xs sm:text-sm mt-1">{sortedFiles.length} records {statusFilter && `filtered`}</CardDescription>
+                            <CardDescription className="text-xs sm:text-sm mt-2 text-slate-600 font-semibold">{sortedFiles.length} records {statusFilter && `filtered`}</CardDescription>
                         </div>
                         <div className="flex gap-2 flex-wrap">
                             {(statusFilter || cityFilter || bankFilter || engineerFilter) && (
@@ -472,19 +496,44 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                         setBankFilter(null);
                                         setEngineerFilter(null);
                                     }}
-                                    className="text-xs sm:text-sm px-2 sm:px-3"
+                                    className="text-xs sm:text-sm px-3 sm:px-4 font-bold border-2 border-slate-300 hover:border-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-300 shadow-sm hover:shadow-md"
                                 >
                                     Clear Filters
                                 </Button>
+                            )}
+                            {selectedRows.size > 0 && (
+                                <>
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={() => {
+                                            const selectedRecords = files.filter(r => selectedRows.has(r._id));
+                                            if (selectedRecords.length > 0) {
+                                                handleCopyToClipboard(selectedRecords);
+                                            }
+                                        }}
+                                        className="text-xs sm:text-sm px-3 sm:px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 font-bold shadow-md hover:shadow-lg transition-all duration-300"
+                                    >
+                                        Copy {selectedRows.size}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedRows(new Set())}
+                                        className="text-xs sm:text-sm px-3 sm:px-4 font-bold border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all duration-300 shadow-sm hover:shadow-md"
+                                    >
+                                        Clear Selection
+                                    </Button>
+                                </>
                             )}
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => fetchFiles(false, true)}
                                 disabled={loading}
-                                className="text-xs sm:text-sm px-2 sm:px-3"
+                                className="text-xs sm:text-sm px-3 sm:px-4 font-bold border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50"
                             >
-                                <FaSyncAlt className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
+                                <FaSyncAlt className={`h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
                                 <span className="hidden sm:inline">Refresh</span>
                             </Button>
                         </div>
@@ -496,204 +545,205 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
-                                             <TableRow className="hover:bg-transparent">
-                                                 <TableHead className="min-w-[50px] text-xs sm:text-sm">
-                                                     <div className="flex items-center gap-1">Copy</div>
-                                                 </TableHead>
-                                                 <TableHead className="min-w-[100px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("clientName")}>
-                                                     <div className="flex items-center gap-1">Client Name {sortField === "clientName" && <FaSort className="h-3 w-3" />}</div>
-                                                 </TableHead>
-                                                <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("address")}>
-                                                    <div className="flex items-center gap-1"> Client Address {sortField === "address" && <FaSort className="h-3 w-3" />}</div>
+                                            <TableRow className="hover:bg-transparent bg-gradient-to-r from-slate-100 to-blue-100 border-b-2 border-blue-300">
+                                                <TableHead className="min-w-[35px] text-xs sm:text-sm px-1 font-black text-slate-800">
+                                                    <div className="flex items-center gap-1 justify-center text-lg">✓</div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[100px] text-xs sm:text-sm">
-                                                    <div className="flex items-center gap-1">
-                                                        <select
-                                                            value={cityFilter || ""}
-                                                            onChange={(e) => setCityFilter(e.target.value || null)}
-                                                            className="text-xs px-2 py-1 border rounded bg-white cursor-pointer"
-                                                        >
-                                                            <option value="">All Cities</option>
-                                                            {uniqueCities.map(city => (
-                                                                <option key={city} value={city}>{city}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                                <TableHead className="min-w-[65px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("clientName")}>
+                                                    <div className="flex items-center gap-1">Clnt {sortField === "clientName" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[100px] text-xs sm:text-sm">
+                                                <TableHead className="min-w-[70px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("address")}>
+                                                    <div className="flex items-center gap-1">Addr {sortField === "address" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
+                                                </TableHead>
+                                                <TableHead className="min-w-[65px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("mobileNumber")}>
+                                                    <div className="flex items-center gap-1">Mobile {sortField === "mobileNumber" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
+                                                </TableHead>
+                                                <TableHead className="min-w-[60px] text-xs sm:text-sm px-1">
                                                     <div className="flex items-center gap-1">
                                                         <select
                                                             value={bankFilter || ""}
                                                             onChange={(e) => setBankFilter(e.target.value || null)}
-                                                            className="text-xs px-2 py-1 border rounded bg-white cursor-pointer"
+                                                            className="text-xs px-1 py-0.5 border rounded bg-white cursor-pointer w-full"
                                                         >
-                                                            <option value="">All Banks</option>
+                                                            <option value="">Bank</option>
                                                             {uniqueBanks.map(bank => (
                                                                 <option key={bank} value={bank}>{bank}</option>
                                                             ))}
                                                         </select>
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[120px] text-xs sm:text-sm">
+                                                <TableHead className="min-w-[65px] text-xs sm:text-sm px-1">
                                                     <div className="flex items-center gap-1">
                                                         <select
                                                             value={engineerFilter || ""}
                                                             onChange={(e) => setEngineerFilter(e.target.value || null)}
-                                                            className="text-xs px-2 py-1 border rounded bg-white cursor-pointer"
+                                                            className="text-xs px-1 py-0.5 border rounded bg-white cursor-pointer w-full"
                                                         >
-                                                            <option value="">All Engineers</option>
+                                                            <option value="">Eng</option>
                                                             {uniqueEngineers.map(engineer => (
                                                                 <option key={engineer} value={engineer}>{engineer}</option>
                                                             ))}
                                                         </select>
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[90px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("mobileNumber")}>
-                                                    <div className="flex items-center gap-1">Mobile {sortField === "mobileNumber" && <FaSort className="h-3 w-3" />}</div>
+                                                <TableHead className="min-w-[60px] text-xs sm:text-sm px-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <select
+                                                            value={cityFilter || ""}
+                                                            onChange={(e) => setCityFilter(e.target.value || null)}
+                                                            className="text-xs px-1 py-0.5 border rounded bg-white cursor-pointer w-full"
+                                                        >
+                                                            <option value="">City</option>
+                                                            {uniqueCities.map(city => (
+                                                                <option key={city} value={city}>{city}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[80px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("payment")}>
-                                                    <div className="flex items-center gap-1">Payment {sortField === "payment" && <FaSort className="h-3 w-3" />}</div>
+                                                <TableHead className="min-w-[50px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("payment")}>
+                                                    <div className="flex items-center gap-1">Pay {sortField === "payment" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[70px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("status")}>
-                                                    <div className="flex items-center gap-1">Status {sortField === "status" && <FaSort className="h-3 w-3" />}</div>
+                                                <TableHead className="min-w-[50px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("status")}>
+                                                    <div className="flex items-center gap-1">Sts {sortField === "status" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[80px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("duration")}>
-                                                    <div className="flex items-center gap-1">Duration {sortField === "duration" && <FaSort className="h-3 w-3" />}</div>
+                                                <TableHead className="min-w-[60px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("duration")}>
+                                                    <div className="flex items-center gap-1">Dur {sortField === "duration" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[140px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100" onClick={() => handleSort("createdAt")}>
-                                                    <div className="flex items-center gap-1">Date & Time {sortField === "createdAt" && <FaSort className="h-3 w-3" />}</div>
+                                                <TableHead className="min-w-[85px] text-xs sm:text-sm cursor-pointer hover:bg-blue-200 px-1 font-black text-slate-800 transition-colors duration-200" onClick={() => handleSort("createdAt")}>
+                                                    <div className="flex items-center gap-1">Date {sortField === "createdAt" && <FaSort className="h-3 w-3 text-blue-600" />}</div>
                                                 </TableHead>
-                                                <TableHead className="min-w-[200px] text-xs sm:text-sm">Notes</TableHead>
-                                                <TableHead className="min-w-[180px] text-xs sm:text-sm">Actions</TableHead>
+                                                <TableHead className="min-w-[100px] text-xs sm:text-sm px-1">Notes</TableHead>
+                                                <TableHead className="min-w-[70px] text-xs sm:text-sm px-1">Acts</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                             {paginatedFiles.map((record) => (
-                                                 <TableRow key={record._id}>
-                                                     <TableCell className="text-sm text-center">
-                                                         <input
-                                                             type="checkbox"
-                                                             checked={selectedRows.has(record._id)}
-                                                             onChange={() => handleCheckboxChange(record._id)}
-                                                             className="w-4 h-4 cursor-pointer"
-                                                         />
-                                                     </TableCell>
-                                                     <TableCell className={`text-sm font-bold text-slate-950 ${record.address && record.address.length > 50 ? 'whitespace-normal' : ''}`}>{record.clientName}</TableCell>
-                                                    <TableCell className={`text-sm font-semibold text-slate-950 ${record.address && record.address.length > 50 ? 'max-w-[200px] whitespace-normal break-words' : 'max-w-[140px] truncate'}`}>{record.address}</TableCell>
-                                                    <TableCell className="text-sm">{record.city}</TableCell>
-                                                    <TableCell className="text-sm">{record.bankName}</TableCell>
-                                                    <TableCell className="text-sm">{record.engineerName}</TableCell>
-                                                    <TableCell className="text-sm">{record.mobileNumber}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={record.payment === "yes" ? "success" : "warning"}>
-                                                            {record.payment === "yes" ? "yes" : "no"}
+                                            {paginatedFiles.map((record) => (
+                                                <TableRow key={record._id} className="hover:bg-blue-50 border-b border-slate-100 transition-colors duration-200">
+                                                    <TableCell className="text-sm text-center px-1 py-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedRows.has(record._id)}
+                                                            onChange={() => handleCheckboxChange(record._id)}
+                                                            className="w-4 h-4 cursor-pointer accent-blue-600 rounded"
+                                                        />
+
+
+
+                                                    </TableCell>
+                                                    <TableCell className={`text-sm font-black text-slate-900 ${record.address && record.address.length > 50 ? 'whitespace-normal' : ''}`}>{record.clientName}</TableCell>
+                                                    <TableCell className={`text-sm font-semibold text-slate-700 ${record.address && record.address.length > 50 ? 'max-w-[200px] whitespace-normal break-words' : 'max-w-[140px] truncate'}`}>{record.address}</TableCell>
+                                                    <TableCell className="text-xs px-1 py-2 truncate font-semibold text-slate-700">{record.mobileNumber}</TableCell>
+                                                    <TableCell className="text-xs px-1 py-2 truncate font-semibold text-slate-700">{record.bankName}</TableCell>
+                                                    <TableCell className="text-xs px-1 py-2 truncate font-semibold text-slate-700">{record.engineerName}</TableCell>
+                                                    <TableCell className="text-xs px-1 py-2 truncate font-semibold text-slate-700">{record.city}</TableCell>
+                                                    <TableCell className="px-1 py-2">
+                                                        <Badge variant={record.payment === "yes" ? "success" : "warning"} className="text-xs px-2 py-1 font-bold shadow-sm">
+                                                            {record.payment === "yes" ? "Y" : "N"}
                                                         </Badge>
                                                     </TableCell>
-                                                    <TableCell>{getStatusBadge(record.status)}</TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="px-1 py-2 text-center">{getStatusBadge(record.status)}</TableCell>
+                                                    <TableCell className="px-1 py-2">
                                                         {timeDurations[record._id] ? (
-                                                            <Badge variant="outline" className="text-xs bg-slate-50">{timeDurations[record._id].days}:{timeDurations[record._id].hours}:{timeDurations[record._id].minutes}:{timeDurations[record._id].seconds}</Badge>
+                                                            <Badge variant="outline" className="text-xs bg-gradient-to-r from-blue-50 to-slate-100 px-2 py-1 font-bold border-blue-300 shadow-sm">{timeDurations[record._id].days}:{timeDurations[record._id].hours}:{timeDurations[record._id].minutes}:{timeDurations[record._id].seconds}</Badge>
                                                         ) : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-xs sm:text-sm">
+                                                    <TableCell className="text-xs sm:text-sm px-1 py-2 font-semibold text-slate-700">
                                                         {record.dateTime || record.createdAt ? (
                                                             <>
                                                                 <div>{new Date(record.dateTime || record.createdAt).toLocaleDateString()}</div>
-                                                                <div>{new Date(record.dateTime || record.createdAt).toLocaleTimeString()}</div>
+                                                                <div className="text-slate-600 text-xs">{new Date(record.dateTime || record.createdAt).toLocaleTimeString()}</div>
                                                             </>
                                                         ) : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-xs sm:text-sm max-w-[200px]">
+                                                    <TableCell className="text-xs max-w-[100px] px-1 py-2">
                                                         {record.notes ? (
-                                                            <div className="whitespace-normal break-words line-clamp-2" title={record.notes}>
+                                                            <div className="whitespace-normal break-words line-clamp-1 text-xs font-semibold text-slate-700" title={record.notes}>
                                                                 {record.notes}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-muted-foreground">-</span>
+                                                            <span className="text-slate-500 font-medium">-</span>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="px-1 py-2">
                                                         <div className="flex flex-wrap gap-1">
                                                             {role === "user" && record.status === "pending" && (
                                                                 <Badge
                                                                     variant="warning"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
                                                                 >
-                                                                    Edit
+                                                                    E
                                                                 </Badge>
                                                             )}
                                                             {role === "user" && record.status === "on-progress" && (
                                                                 <Badge
                                                                     variant="default"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200 bg-blue-600"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
                                                                 >
-                                                                    Edit
+                                                                    E
                                                                 </Badge>
                                                             )}
                                                             {role === "user" && record.status === "rejected" && (
                                                                 <Badge
                                                                     variant="destructive"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
                                                                 >
-                                                                    Edit
+                                                                    E
                                                                 </Badge>
                                                             )}
                                                             {record.status === "approved" && (
                                                                 <Badge
                                                                     variant="success"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
                                                                     onClick={() => handleDownloadPDF(record)}
                                                                 >
-                                                                    <FaDownload className="h-3 w-3 mr-0.5" />
-                                                                    PDF
+                                                                    <FaDownload className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
                                                             {(["manager1", "manager2"].includes(role) || role === "admin") && (record.status === "pending" || record.status === "on-progress") && (
                                                                 <Badge
                                                                     variant="default"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200 bg-blue-600"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
                                                                 >
-                                                                    Review
+                                                                    R
                                                                 </Badge>
                                                             )}
                                                             {(["manager1", "manager2"].includes(role) || role === "admin") && record.status === "rejected" && (
                                                                 <Badge
                                                                     variant="destructive"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
                                                                 >
-                                                                    Edit
+                                                                    E
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        {(record.status === "approved" || record.status === "rejected") && (
-                                                            <div className="mt-1 sm:mt-2 text-xs text-muted-foreground space-y-1">
-                                                                <p className="truncate">{`${record.status === "approved" ? "✓ Approved" : "✗ Rejected"} by ${record.lastUpdatedBy || "System"}`}</p>
-                                                                {record.managerFeedback && (
-                                                                    <p className="italic line-clamp-2">{record.managerFeedback.substring(0, 50)}...</p>
-                                                                )}
-                                                            </div>
-                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
                                     </Table>
                                 </div>
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={(page) => dispatch(setCurrentPage(page))}
-                                />
+                                <div className="flex-shrink-0 border-t-2 border-blue-300 bg-gradient-to-r from-blue-50 to-white">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={(page) => dispatch(setCurrentPage(page))}
+                                    />
+                                </div>
                             </>
                         ) : (
-                            <div className="text-center py-12">
-                                <FaEye className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                                <p className="text-muted-foreground">No data found</p>
+                            <div className="text-center py-16">
+                                <div className="mb-4 flex justify-center">
+                                    <div className="p-4 bg-blue-100 rounded-full">
+                                        <FaEye className="h-12 w-12 text-blue-600" />
+                                    </div>
+                                </div>
+                                <p className="text-slate-600 font-semibold text-lg">No data found</p>
+                                <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or create a new record</p>
                             </div>
                         )}
                     </CardContent>
@@ -712,7 +762,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                     {/* Floating Chat Button */}
                     <button
                         onClick={() => setChatModalOpen(true)}
-                        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center"
+                        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-2xl hover:shadow-3xl transition-all hover:scale-125 flex items-center justify-center font-bold border-4 border-blue-500 hover:border-blue-300"
                         title="Chat Support"
                     >
                         <FaComments className="w-8 h-8" />

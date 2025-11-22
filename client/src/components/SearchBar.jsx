@@ -105,7 +105,7 @@ const SearchBar = ({ data = [] }) => {
     };
 
     return (
-        <div className="relative flex-1 max-w-md" ref={searchRef}>
+        <div className="relative w-full" ref={searchRef}>
             <div className="relative flex items-center">
                 <FaSearch className="absolute left-3 h-4 w-4 text-white/60 pointer-events-none" />
                 <input

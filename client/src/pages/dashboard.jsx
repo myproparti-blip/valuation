@@ -317,20 +317,23 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
             {/* Header */}
             <header className="bg-gradient-to-r from-slate-800 via-slate-850 to-slate-900 text-white shadow-2xl sticky top-0 z-40 border-b-4 border-blue-600">
                 <div className="px-3 sm:px-6 py-3 sm:py-5 flex flex-col gap-3 sm:gap-4">
-                    {/* Top Row - Logo and Controls */}
-                    <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
-                        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                <div className="text-3xl sm:text-4xl flex-shrink-0 text-blue-300 drop-shadow-xl transform hover:scale-110 transition-transform duration-300">
-                                    <FaChartBar />
-                                </div>
-                                <div className="min-w-0">
-                                    <h1 className="text-xl sm:text-3xl font-black tracking-tight truncate text-white">Valuation Dashboard</h1>
-                                    <p className="text-xs sm:text-sm text-blue-100 truncate font-semibold mt-0.5">
-                                        {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
-                                    </p>
-                                </div>
+                    {/* Top Row - Logo, Search, and Controls */}
+                    <div className="flex items-center justify-between gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            <div className="text-3xl sm:text-4xl flex-shrink-0 text-blue-300 drop-shadow-xl transform hover:scale-110 transition-transform duration-300">
+                                <FaChartBar />
                             </div>
+                            <div className="min-w-0">
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white whitespace-nowrap">Valuation Dashboard</h1>
+                                <p className="text-xs text-blue-100 font-semibold mt-0.5 hidden sm:block">
+                                    {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="flex-1 mx-4">
+                            <SearchBar data={files} />
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
@@ -381,11 +384,6 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                 </>
                             )}
                         </div>
-                    </div>
-
-                    {/* Search Bar Row */}
-                    <div className="flex items-center justify-center w-full">
-                        <SearchBar data={files} />
                     </div>
                 </div>
             </header>

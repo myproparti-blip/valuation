@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar, FaLock, FaComments, FaClock, FaSpinner, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar, FaLock, FaComments, FaClock, FaSpinner, FaCheckCircle, FaTimesCircle, FaEdit } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../components/ui";
 import { getAllValuations } from "../services/valuationservice";
@@ -669,35 +669,39 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                                             {role === "user" && record.status === "pending" && (
                                                                 <Badge
                                                                     variant="warning"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
+                                                                    className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 flex items-center gap-1.5"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
+                                                                    title="Edit Form"
                                                                 >
-                                                                    E
+                                                                    <FaEdit className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
                                                             {role === "user" && record.status === "on-progress" && (
                                                                 <Badge
                                                                     variant="default"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200 bg-blue-600"
+                                                                    className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 bg-blue-600 flex items-center gap-1.5"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
+                                                                    title="Edit Form"
                                                                 >
-                                                                    E
+                                                                    <FaEdit className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
                                                             {role === "user" && record.status === "rejected" && (
                                                                 <Badge
                                                                     variant="destructive"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
+                                                                    className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 flex items-center gap-1.5"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
+                                                                    title="Edit Form"
                                                                 >
-                                                                    E
+                                                                    <FaEdit className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
                                                             {record.status === "approved" && (
                                                                 <Badge
                                                                     variant="success"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
+                                                                    className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 flex items-center gap-1.5"
                                                                     onClick={() => handleDownloadPDF(record)}
+                                                                    title="Download PDF"
                                                                 >
                                                                     <FaDownload className="h-3 w-3" />
                                                                 </Badge>
@@ -705,19 +709,21 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                                             {(["manager1", "manager2"].includes(role) || role === "admin") && (record.status === "pending" || record.status === "on-progress") && (
                                                                 <Badge
                                                                     variant="default"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200 bg-blue-600"
+                                                                    className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 bg-blue-600 flex items-center gap-1.5"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
+                                                                    title="Review Form"
                                                                 >
-                                                                    R
+                                                                    <FaEye className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
                                                             {(["manager1", "manager2"].includes(role) || role === "admin") && record.status === "rejected" && (
                                                                 <Badge
                                                                     variant="destructive"
-                                                                    className="text-xs px-2 py-1 cursor-pointer hover:shadow-md hover:scale-110 font-bold transition-all duration-200"
+                                                                    className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 flex items-center gap-1.5"
                                                                     onClick={() => navigate(`/valuationeditform/${record.uniqueId}`)}
+                                                                    title="Edit Form"
                                                                 >
-                                                                    E
+                                                                    <FaEdit className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
                                                         </div>

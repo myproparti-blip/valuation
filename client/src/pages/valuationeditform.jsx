@@ -248,10 +248,10 @@ const EditValuationPage = ({ user, onLogin }) => {
 
             if (exifData?.latitude && exifData?.longitude) {
                 gpsCoordinates = {
-                    latitude: exifData.latitude,
-                    longitude: exifData.longitude
+                    latitude: String(exifData.latitude),
+                    longitude: String(exifData.longitude)
                 };
-                alert(`✓ GPS found\nLat: ${gpsCoordinates.latitude.toFixed(6)}\nLng: ${gpsCoordinates.longitude.toFixed(6)}`);
+                alert(`✓ GPS found\nLat: ${parseFloat(gpsCoordinates.latitude).toFixed(6)}\nLng: ${parseFloat(gpsCoordinates.longitude).toFixed(6)}`);
             }
         } catch (error) {
             // Error reading EXIF data
@@ -266,11 +266,14 @@ const EditValuationPage = ({ user, onLogin }) => {
 
         setLocationImagePreviews([{ file, preview }]);
 
-        setFormData(prev => ({
-            ...prev,
-            locationImages: [file],
-            coordinates: gpsCoordinates ? gpsCoordinates : prev.coordinates
-        }));
+        setFormData(prev => {
+            const newCoordinates = gpsCoordinates ? gpsCoordinates : prev.coordinates;
+            return {
+                ...prev,
+                locationImages: [file],
+                coordinates: newCoordinates
+            };
+        });
     };
 
     const handleImageUpload = async (e, inputNumber) => {

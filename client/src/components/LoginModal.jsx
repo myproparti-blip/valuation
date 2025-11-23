@@ -56,60 +56,60 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
                 <div className="space-y-4 py-4">
                     {error && (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-800">{error}</p>
+                            <p className="text-sm text-red-800 font-medium">{error}</p>
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Username Field */}
-                        <div className="space-y-2">
-                            <Label htmlFor="modal-username">Username</Label>
-                            <div className="relative">
-                                <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="modal-username"
-                                    name="username"
-                                    type="text"
-                                    placeholder="Enter your username"
-                                    value={formData.username}
-                                    onChange={handleInputChange}
-                                    disabled={loading}
-                                    className="pl-10"
-                                    required
-                                />
-                            </div>
-                        </div>
+                         {/* Username Field */}
+                         <div className="space-y-2">
+                             <Label htmlFor="modal-username">Username</Label>
+                             <div className="relative">
+                                 <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
+                                 <Input
+                                     id="modal-username"
+                                     name="username"
+                                     type="text"
+                                     placeholder="Enter your username"
+                                     value={formData.username}
+                                     onChange={handleInputChange}
+                                     disabled={loading}
+                                     className="pl-10"
+                                     required
+                                 />
+                             </div>
+                         </div>
 
-                        {/* Password Field */}
-                        <div className="space-y-2">
-                            <Label htmlFor="modal-password">Password</Label>
-                            <div className="relative">
-                                <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="modal-password"
-                                    name="password"
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Enter your password"
-                                    value={formData.password}
-                                    onChange={handleInputChange}
-                                    disabled={loading}
-                                    className="pl-10 pr-10"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    disabled={loading}
-                                >
-                                    {showPassword ? (
-                                        <FaEyeSlash className="h-4 w-4" />
-                                    ) : (
-                                        <FaEye className="h-4 w-4" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+                         {/* Password Field */}
+                         <div className="space-y-2">
+                             <Label htmlFor="modal-password">Password</Label>
+                             <div className="relative">
+                                 <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
+                                 <Input
+                                     id="modal-password"
+                                     name="password"
+                                     type={showPassword ? "text" : "password"}
+                                     placeholder="Enter your password"
+                                     value={formData.password}
+                                     onChange={handleInputChange}
+                                     disabled={loading}
+                                     className="pl-10 pr-10"
+                                     required
+                                 />
+                                 <button
+                                     type="button"
+                                     onClick={() => setShowPassword(!showPassword)}
+                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#F36E21] transition-colors"
+                                     disabled={loading}
+                                 >
+                                     {showPassword ? (
+                                         <FaEyeSlash className="h-4 w-4" />
+                                     ) : (
+                                         <FaEye className="h-4 w-4" />
+                                     )}
+                                 </button>
+                             </div>
+                         </div>
 
                         {/* Submit Buttons */}
                         <div className="flex gap-3 justify-end pt-4">

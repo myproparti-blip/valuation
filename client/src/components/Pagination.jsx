@@ -45,7 +45,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           >
             1
           </Button>
-          {startPage > 2 && <span className="text-muted-foreground text-xs px-1">⋯</span>}
+          {startPage > 2 && <span className="text-[#6B7280] text-xs px-1">⋯</span>}
         </>
       )}
 
@@ -67,7 +67,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 
       {endPage < totalPages && (
         <>
-          {endPage < totalPages - 1 && <span className="text-muted-foreground text-xs px-1">⋯</span>}
+          {endPage < totalPages - 1 && <span className="text-[#6B7280] text-xs px-1">⋯</span>}
           <Button
             variant="outline"
             size="sm"

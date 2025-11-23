@@ -1,13 +1,20 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 
+// Consistent loader size configuration
+const LOADER_SIZE = {
+  SPINNER: 'w-20 h-20', // 80px x 80px
+  CARD_PADDING: 'p-12',
+  ICON_SIZE: 'h-5 w-5'
+};
+
 const GlobalLoader = () => {
   const { isLoading, message } = useSelector((state) => state.loader);
 
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/60 to-slate-950/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
       <style>
         {`
           @keyframes shimmer {
@@ -20,13 +27,13 @@ const GlobalLoader = () => {
           }
           @keyframes pulse-ring {
             0% { 
-              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+              box-shadow: 0 0 0 0 rgba(243, 110, 33, 0.7);
             }
             50% {
-              box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+              box-shadow: 0 0 0 10px rgba(243, 110, 33, 0);
             }
             100% {
-              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+              box-shadow: 0 0 0 0 rgba(243, 110, 33, 0);
             }
           }
           @keyframes gradient-shift {
@@ -46,19 +53,19 @@ const GlobalLoader = () => {
         {/* Premium Loader Card */}
         <div className="relative">
           {/* Glow background */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/30 via-blue-500/20 to-cyan-500/30 rounded-3xl blur-2xl opacity-60"></div>
+          <div className="absolute -inset-4 bg-gradient-to-r from-[#F36E21]/30 via-[#EC5E25]/20 to-[#FFC547]/30 rounded-3xl blur-2xl opacity-60"></div>
 
           {/* Main card */}
           <div className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-12 shadow-2xl">
             {/* Spinner container */}
             <div className="flex justify-center items-center mb-8">
-              <div className="relative w-20 h-20">
+              <div className={`relative ${LOADER_SIZE.SPINNER}`}>
                 {/* Outer glow */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 opacity-20 blur-lg"></div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#F36E21] to-[#FFC547] opacity-20 blur-lg"></div>
 
                 {/* Main spinner - premium circular indicator */}
                 <svg
-                  className="w-20 h-20"
+                  className={LOADER_SIZE.SPINNER}
                   viewBox="0 0 100 100"
                   style={{
                     animation: 'rotate 3s linear infinite',
@@ -66,9 +73,9 @@ const GlobalLoader = () => {
                 >
                   <defs>
                     <linearGradient id="premiumGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="1" />
-                      <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.6" />
+                      <stop offset="0%" stopColor="#F36E21" stopOpacity="1" />
+                      <stop offset="50%" stopColor="#EC5E25" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#FFC547" stopOpacity="0.6" />
                     </linearGradient>
                   </defs>
 
@@ -94,14 +101,14 @@ const GlobalLoader = () => {
                     strokeLinecap="round"
                     style={{
                       animation: 'pulse 2s ease-in-out infinite',
-                      filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))',
+                      filter: 'drop-shadow(0 0 8px rgba(243, 110, 33, 0.5))',
                     }}
                   />
                 </svg>
 
                 {/* Center indicator dot */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full loader-spinner"></div>
+                  <div className="w-2 h-2 bg-gradient-to-r from-[#F36E21] to-[#FFC547] rounded-full loader-spinner"></div>
                 </div>
               </div>
             </div>
@@ -116,7 +123,7 @@ const GlobalLoader = () => {
               <div className="space-y-2 pt-2">
                 <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500"
+                    className="h-full bg-gradient-to-r from-[#F36E21] via-[#FFC547] to-[#F36E21]"
                     style={{
                       animation: 'gradient-shift 2s ease infinite',
                       backgroundSize: '200% 100%',

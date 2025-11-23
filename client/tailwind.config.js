@@ -40,11 +40,25 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // ICICI Brand Colors
+        icici: {
+          orange: "#F36E21",
+          "orange-dark": "#EC5E25",
+          maroon: "#7A1F14",
+          gold: "#FFC547",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "3xl": "1.875rem",
+      },
+      boxShadow: {
+        "icici-sm": "0 2px 4px rgba(243, 110, 33, 0.08)",
+        "icici-md": "0 4px 12px rgba(243, 110, 33, 0.12)",
+        "icici-lg": "0 12px 24px rgba(243, 110, 33, 0.16)",
+        "icici-xl": "0 20px 40px rgba(243, 110, 33, 0.2)",
       },
       keyframes: {
         "accordion-down": {

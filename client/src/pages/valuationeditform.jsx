@@ -64,8 +64,12 @@ const EditValuationPage = ({ user, onLogin }) => {
         payment: '',
         collectedBy: '',
         dsa: '',
+        customDsa: '',
         engineerName: '',
-        notes: ''
+        customEngineerName: '',
+        notes: '',
+        customBankName: '',
+        customCity: ''
     });
 
     const [imagePreviews, setImagePreviews] = useState([]);
@@ -91,7 +95,7 @@ const EditValuationPage = ({ user, onLogin }) => {
         });
     };
 
-   
+
     const banks = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB"];
     const cities = ["Surat", "vadodara", "Ahmedabad", "Kheda",];
     const dsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
@@ -106,13 +110,23 @@ const EditValuationPage = ({ user, onLogin }) => {
             const parsedData = JSON.parse(savedData);
             if (parsedData.uniqueId === id) {
                 setValuation(parsedData);
-                setBankName(parsedData.bankName || "");
-                setCity(parsedData.city || "");
+                const bankValue = banks.includes(parsedData.bankName) ? parsedData.bankName : "other";
+                const cityValue = cities.includes(parsedData.city) ? parsedData.city : "other";
+                const dsaValue = ["John Doe", "Jane Smith", "Mike Johnson"].includes(parsedData.dsa) ? parsedData.dsa : "other";
+                const engineerValue = ["Bhavesh", "Bhanu", "Ronak", "Mukesh"].includes(parsedData.engineerName) ? parsedData.engineerName : "other";
+                setBankName(bankValue);
+                setCity(cityValue);
                 setFormData(prev => ({
                     ...prev,
                     ...parsedData,
                     directions: parsedData.directions || prev.directions,
-                    coordinates: parsedData.coordinates || prev.coordinates
+                    coordinates: parsedData.coordinates || prev.coordinates,
+                    customBankName: bankValue === "other" ? (parsedData.bankName || parsedData.customBankName || "") : "",
+                    customCity: cityValue === "other" ? (parsedData.city || parsedData.customCity || "") : "",
+                    customDsa: dsaValue === "other" ? (parsedData.dsa || parsedData.customDsa || "") : "",
+                    customEngineerName: engineerValue === "other" ? (parsedData.engineerName || parsedData.customEngineerName || "") : "",
+                    dsa: dsaValue,
+                    engineerName: engineerValue
                 }));
                 return;
             }
@@ -121,15 +135,25 @@ const EditValuationPage = ({ user, onLogin }) => {
         try {
             const dbData = await getValuationById(id);
             setValuation(dbData);
-            setBankName(dbData.bankName || "");
-            setCity(dbData.city || "");
+            const bankValue = banks.includes(dbData.bankName) ? dbData.bankName : "other";
+            const cityValue = cities.includes(dbData.city) ? dbData.city : "other";
+            const dsaValue = ["John Doe", "Jane Smith", "Mike Johnson"].includes(dbData.dsa) ? dbData.dsa : "other";
+            const engineerValue = ["Bhavesh", "Bhanu", "Ronak", "Mukesh"].includes(dbData.engineerName) ? dbData.engineerName : "other";
+            setBankName(bankValue);
+            setCity(cityValue);
             setFormData(prev => ({
                 ...prev,
                 ...dbData,
                 directions: dbData.directions || prev.directions,
                 coordinates: dbData.coordinates || prev.coordinates,
                 propertyImages: dbData.propertyImages || [],
-                locationImages: dbData.locationImages || []
+                locationImages: dbData.locationImages || [],
+                customBankName: bankValue === "other" ? (dbData.bankName || dbData.customBankName || "") : "",
+                customCity: cityValue === "other" ? (dbData.city || dbData.customCity || "") : "",
+                customDsa: dsaValue === "other" ? (dbData.dsa || dbData.customDsa || "") : "",
+                customEngineerName: engineerValue === "other" ? (dbData.engineerName || dbData.customEngineerName || "") : "",
+                dsa: dsaValue,
+                engineerName: engineerValue
             }));
 
             // Restore property image previews from database
@@ -188,13 +212,23 @@ const EditValuationPage = ({ user, onLogin }) => {
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
                 setValuation(parsedData);
-                setBankName(parsedData.bankName || "");
-                setCity(parsedData.city || "");
+                const bankValue = banks.includes(parsedData.bankName) ? parsedData.bankName : "other";
+                const cityValue = cities.includes(parsedData.city) ? parsedData.city : "other";
+                const dsaValue = ["John Doe", "Jane Smith", "Mike Johnson"].includes(parsedData.dsa) ? parsedData.dsa : "other";
+                const engineerValue = ["Bhavesh", "Bhanu", "Ronak", "Mukesh"].includes(parsedData.engineerName) ? parsedData.engineerName : "other";
+                setBankName(bankValue);
+                setCity(cityValue);
                 setFormData(prev => ({
                     ...prev,
                     ...parsedData,
                     directions: parsedData.directions || prev.directions,
-                    coordinates: parsedData.coordinates || prev.coordinates
+                    coordinates: parsedData.coordinates || prev.coordinates,
+                    customBankName: bankValue === "other" ? (parsedData.bankName || parsedData.customBankName || "") : "",
+                    customCity: cityValue === "other" ? (parsedData.city || parsedData.customCity || "") : "",
+                    customDsa: dsaValue === "other" ? (parsedData.dsa || parsedData.customDsa || "") : "",
+                    customEngineerName: engineerValue === "other" ? (parsedData.engineerName || parsedData.customEngineerName || "") : "",
+                    dsa: dsaValue,
+                    engineerName: engineerValue
                 }));
             } else {
                 setValuation({
@@ -251,7 +285,6 @@ const EditValuationPage = ({ user, onLogin }) => {
                     latitude: String(exifData.latitude),
                     longitude: String(exifData.longitude)
                 };
-                alert(`✓ GPS found\nLat: ${parseFloat(gpsCoordinates.latitude).toFixed(6)}\nLng: ${parseFloat(gpsCoordinates.longitude).toFixed(6)}`);
             }
         } catch (error) {
             // Error reading EXIF data
@@ -338,16 +371,19 @@ const EditValuationPage = ({ user, onLogin }) => {
         }
 
         // === BANK & CITY ===
-        if (!bankName || bankName === "") {
+        const finalBankName = bankName === "other" ? formData.customBankName : bankName;
+        if (!finalBankName || !finalBankName.trim()) {
             errors.push("Bank Name is required");
         }
 
-        if (!city || city === "") {
+        const finalCity = city === "other" ? formData.customCity : city;
+        if (!finalCity || !finalCity.trim()) {
             errors.push("City is required");
         }
 
         // === DSA ===
-        if (!formData.dsa || !formData.dsa.trim()) {
+        const finalDsa = formData.dsa === "other" ? formData.customDsa : formData.dsa;
+        if (!finalDsa || !finalDsa.trim()) {
             errors.push("DSA (Sales Agent) is required");
         }
 
@@ -377,12 +413,12 @@ const EditValuationPage = ({ user, onLogin }) => {
 
         // === PROPERTY IMAGES ===
         if (imagePreviews.length === 0) {
-            errors.push("At least one property image is required");
+            errors.push("property image is required");
         }
 
         // === LOCATION IMAGES ===
         if (locationImagePreviews.length === 0) {
-            errors.push("At least one location image is required");
+            errors.push("location image is required");
         }
 
         return errors;
@@ -410,13 +446,15 @@ const EditValuationPage = ({ user, onLogin }) => {
 
         try {
             setLoading(true);
-            dispatch(showLoader("Saving your changes..."));
+            dispatch(showLoader("Loading Data..."));
 
-            // Build regular JSON payload
+            // Build regular JSON payload with trimmed custom values
             const payload = {
                 ...formData,
-                bankName: bankName === "other" ? formData.customBankName : bankName,
-                city: city === "other" ? formData.customCity : city,
+                bankName: bankName === "other" ? (formData.customBankName || "").trim() : bankName,
+                city: city === "other" ? (formData.customCity || "").trim() : city,
+                dsa: formData.dsa === "other" ? (formData.customDsa || "").trim() : formData.dsa,
+                engineerName: formData.engineerName === "other" ? (formData.customEngineerName || "").trim() : formData.engineerName,
             };
 
             // Remove immutable/system fields
@@ -471,7 +509,7 @@ const EditValuationPage = ({ user, onLogin }) => {
 
             // Call API to update valuation with JSON payload
             const apiResponse = await updateValuation(id, payload);
-            
+
             // Invalidate cache to ensure fresh data on dashboard
             invalidateCache("/valuations");
 
@@ -491,8 +529,20 @@ const EditValuationPage = ({ user, onLogin }) => {
 
             // Update component state
             setValuation(updatedValuation);
-            setBankName(payload.bankName);
-            setCity(payload.city);
+            // Set bank and city states based on whether they're in default lists
+            const bankState = banks.includes(payload.bankName) ? payload.bankName : "other";
+            const cityState = cities.includes(payload.city) ? payload.city : "other";
+            setBankName(bankState);
+            setCity(cityState);
+            // Update formData with trimmed custom values
+            setFormData(prev => ({
+                ...prev,
+                ...payload,
+                customBankName: bankState === "other" ? payload.bankName : "",
+                customCity: cityState === "other" ? payload.city : "",
+                customDsa: formData.dsa === "other" ? (payload.dsa || "").trim() : "",
+                customEngineerName: formData.engineerName === "other" ? (payload.engineerName || "").trim() : ""
+            }));
 
             // Show success and navigate
             showSuccess("Form saved successfully!");
@@ -533,37 +583,28 @@ const EditValuationPage = ({ user, onLogin }) => {
             };
 
             const responseData = await managerSubmit(id, payload);
-            
-            // Invalidate cache to ensure fresh data on dashboard
             invalidateCache("/valuations");
 
+            // Update the valuation state with new status
             const updatedValuation = {
                 ...valuation,
-                ...(responseData?.data || responseData),
                 status: statusValue,
-                managerFeedback: modalFeedback.trim(),
-                submittedByManager: true,
-                lastUpdatedBy: user.username,
-                lastUpdatedByRole: user.role
+                managerFeedback: modalFeedback.trim()
             };
             setValuation(updatedValuation);
-            setModalOpen(false);
 
             showSuccess(`Form ${statusValue} successfully!`);
+            dispatch(hideLoader());
+            setModalOpen(false);
+
             setTimeout(() => {
-                dispatch(hideLoader());
-                setLoading(false);
-                navigate("/dashboard");
-            }, 1000);
+                navigate("/dashboard", { replace: true });
+            }, 300);
         } catch (err) {
             showError(err.message || `Failed to ${actionLabel.toLowerCase()} form`);
             dispatch(hideLoader());
             setLoading(false);
         }
-    };
-
-    const handlePrint = () => {
-        window.print();
     };
 
     if (!valuation) {
@@ -596,718 +637,759 @@ const EditValuationPage = ({ user, onLogin }) => {
         (role === "manager1" || role === "manager2") && (valuation.status === "pending" || valuation.status === "rejected" || valuation.status === "on-progress") ||
         (role === "user") && (valuation.status === "rejected" || valuation.status === "pending"));
 
-    // Admin and managers can edit client information
-    const canEditClientInfo = isLoggedIn && (role === "admin" || role === "manager1" || role === "manager2");
-
     const canApprove = isLoggedIn && (role === "manager1" || role === "manager2" || role === "admin") &&
         (valuation.status === "pending" || valuation.status === "on-progress" || valuation.status === "rejected");
 
+    // Fields that only managers and admin can edit (users can only read)
+    const restrictedEditFields = ["bankName", "city", "clientName", "mobileNumber", "address", "payment", "collectedBy", "dsa", "engineerName"];
+
+    // Check if a specific field is editable for the current user
+    const canEditField = (fieldName) => {
+        // If user is admin or manager, they can edit all fields
+        if (role === "admin" || role === "manager1" || role === "manager2") {
+            return canEdit;
+        }
+        // If user is regular user, they cannot edit restricted fields
+        if (role === "user") {
+            return canEdit && !restrictedEditFields.includes(fieldName);
+        }
+        return canEdit;
+    };
+
+    const statusColors = {
+        "pending": { bg: "bg-yellow-100", text: "text-yellow-800" },
+        "on-progress": { bg: "bg-blue-100", text: "text-blue-800" },
+        "approved": { bg: "bg-green-100", text: "text-green-800" },
+        "rejected": { bg: "bg-red-100", text: "text-red-800" }
+    };
+
+    const statusIcons = {
+        "pending": <FaCog className="h-4 w-4" />,
+        "on-progress": <FaArrowLeft className="h-4 w-4" />,
+        "approved": <FaCheckCircle className="h-4 w-4" />,
+        "rejected": <FaTimesCircle className="h-4 w-4" />
+    };
+
     return (
-        <div className="min-h-screen p-4">
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 p-4 md:p-6">
             {!isLoggedIn && (
                 <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-6 max-w-sm shadow-lg">
-                        <p className="text-center font-semibold">Please login to edit this valuation</p>
-                        <p className="text-center text-sm text-muted-foreground mt-2">You are currently viewing in read-only mode</p>
+                    <div className="bg-white rounded-2xl p-8 max-w-sm shadow-2xl">
+                        <p className="text-center font-bold text-lg text-gray-900">Please login to edit this valuation</p>
+                        <p className="text-center text-sm text-gray-600 mt-3">You are currently viewing in read-only mode</p>
                     </div>
                 </div>
             )}
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto flex flex-col gap-6">
 
-                {/* Header Card */}
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => navigate("/dashboard")}
-                                className="rounded-lg"
-                            >
-                                <FaArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-900">Edit Valuation Form</h1>
-                                <p className="text-sm text-gray-600 mt-1 font-mono bg-gray-100 px-3 py-1 rounded inline-block">ID: {valuation.uniqueId}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Main Cards Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                    {/* Client Information Card */}
-                    <Card className={`${!canEditClientInfo ? 'opacity-75' : ''}`}>
-                        <CardHeader className="border-b">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-3">
-                                    <FaUser className="h-5 w-5" />
-                                    Client Information
-                                </CardTitle>
-                                {!canEditClientInfo && (
-                                    <Badge variant="destructive" className="text-xs">
-                                        Admin Only
-                                    </Badge>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            {!canEditClientInfo && (
-                                <div className="mb-4 p-3 border rounded-lg">
-                                    <p className="text-sm">
-                                        <strong>Note:</strong> Only administrators can edit client information.
-                                    </p>
-                                </div>
-                            )}
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Client Name</Label>
-                                        <Input
-                                            placeholder="Enter client name"
-                                            name="clientName"
-                                            value={formData.clientName || ""}
-                                            onChange={handleInputChange}
-                                            disabled={!canEditClientInfo}
-                                            className="mt-1"
-                                        />
-                                    </div>
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Mobile Number</Label>
-                                        <Input
-                                            placeholder="Enter mobile number"
-                                            name="mobileNumber"
-                                            maxLength={10}
-                                            value={formData.mobileNumber || ""}
-                                            onChange={handleInputChange}
-                                            disabled={!canEditClientInfo}
-                                            className="mt-1"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Bank Name</Label>
-                                    <div className="flex gap-2 flex-wrap mb-3">
-                                        {banks.map(name => (
-                                            <Button
-                                                key={name}
-                                                type="button"
-                                                variant={bankName === name ? "default" : "outline"}
-                                                className="text-sm"
-                                                onClick={() => { setBankName(name); handleInputChange({ target: { name: "bankName", value: name } }); }}
-                                                disabled={!canEditClientInfo}
-                                            >
-                                                {name}
-                                            </Button>
-                                        ))}
-                                        <Button
-                                            type="button"
-                                            variant={bankName === "other" ? "default" : "outline"}
-                                            className="text-sm"
-                                            onClick={() => setBankName("other")}
-                                            disabled={!canEditClientInfo}
-                                        >
-                                            Other
-                                        </Button>
-                                    </div>
-                                    {bankName === "other" && (
-                                        <Input
-                                            placeholder="Enter bank name"
-                                            name="customBankName"
-                                            value={formData.customBankName || ""}
-                                            onChange={handleInputChange}
-                                            disabled={!canEditClientInfo}
-                                        />
-                                    )}
-                                </div>
-
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">City</Label>
-                                    <div className="flex gap-2 flex-wrap mb-3">
-                                        {cities.map(name => (
-                                            <Button
-                                                key={name}
-                                                type="button"
-                                                variant={city === name ? "default" : "outline"}
-                                                className="text-sm"
-                                                onClick={() => { setCity(name); handleInputChange({ target: { name: "city", value: name } }); }}
-                                                disabled={!canEditClientInfo}
-                                            >
-                                                {name}
-                                            </Button>
-                                        ))}
-                                        <Button
-                                            type="button"
-                                            variant={city === "other" ? "default" : "outline"}
-                                            className="text-sm"
-                                            onClick={() => setCity("other")}
-                                            disabled={!canEditClientInfo}
-                                        >
-                                            Other
-                                        </Button>
-                                    </div>
-                                    {city === "other" && (
-                                        <Input
-                                            placeholder="Enter city name"
-                                            name="customCity"
-                                            value={formData.customCity || ""}
-                                            onChange={handleInputChange}
-                                            disabled={!canEditClientInfo}
-                                        />
-                                    )}
-                                </div>
-
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">DSA</Label>
-                                    <select
-                                        value={formData.dsa || ""}
-                                        onChange={(e) => handleInputChange({ target: { name: "dsa", value: e.target.value } })}
-                                        disabled={!canEditClientInfo}
-                                        className="w-full p-2 border border-gray-300 rounded-md mt-1"
-                                    >
-                                        <option value="">Select sales agent</option>
-                                        {dsaNames.map((name) => (
-                                            <option key={name} value={name}>{name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Engineer Name</Label>
-                                    <Input
-                                        placeholder="Enter engineer name"
-                                        name="engineerName"
-                                        value={formData.engineerName || ""}
-                                        onChange={handleInputChange}
-                                        disabled={!canEditClientInfo}
-                                        className="mt-1"
-                                    />
-                                </div>
-
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Address</Label>
-                                    <Textarea
-                                        placeholder="Enter full address"
-                                        name="address"
-                                        value={formData.address || ""}
-                                        onChange={handleInputChange}
-                                        disabled={!canEditClientInfo}
-                                        rows={4}
-                                        className="mt-1"
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Form Details Card */}
-                    <Card>
-                        <CardHeader className="border-b">
-                            <CardTitle className="flex items-center gap-3">
-                                <FaFileAlt className="h-5 w-5" />
-                                Form Details
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Submitted By</Label>
-                                        <p className="font-semibold text-gray-900 mt-1">{valuation.username}</p>
-                                    </div>
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Form ID</Label>
-                                        <code className="px-3 py-1 rounded-lg text-sm font-mono mt-1 block border">{valuation.uniqueId}</code>
-                                    </div>
-                                </div>
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Date & Time</Label>
-                                    <p className="font-semibold text-gray-900 mt-1">{valuation.dateTime}</p>
-                                </div>
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Day</Label>
-                                    <p className="font-semibold text-gray-900 mt-1">{valuation.day}</p>
-                                </div>
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Status</Label>
-                                    <Badge
-                                        variant={getStatusColor(valuation.status)}
-                                        className="mt-1 text-sm px-3 py-1"
-                                    >
-                                        {valuation.status === "pending" ? "Pending Review" :
-                                            valuation.status === "on-progress" ? "On Progress" :
-                                                valuation.status === "approved" ? "Approved" : "Rejected"}
-                                    </Badge>
-                                </div>
-                                {valuation.managerFeedback && (
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Manager Feedback</Label>
-                                        <div className="p-3 rounded-lg mt-1 border">
-                                            <p className="text-sm">{valuation.managerFeedback}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Payment Information Card */}
-                    <Card>
-                        <CardHeader className="border-b">
-                            <CardTitle className="flex items-center gap-3">
-                                <FaDollarSign className="h-5 w-5" />
-                                Payment Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-4">
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Payment Collected</Label>
-                                    <RadioGroup value={formData.payment} onValueChange={(val) => setFormData(prev => ({ ...prev, payment: val }))} disabled={!canEdit} className="flex gap-4 mt-2">
-                                        <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="payment-yes" disabled={!canEdit} />
-                                            <Label htmlFor="payment-yes" className="font-normal cursor-pointer">Yes, Payment Collected</Label>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="payment-no" disabled={!canEdit} />
-                                            <Label htmlFor="payment-no" className="font-normal cursor-pointer">No, Payment Pending</Label>
-                                        </div>
-                                    </RadioGroup>
-                                </div>
-                                {formData.payment === "yes" && (
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Collected By</Label>
-                                        <Textarea
-                                            placeholder="Enter name and details of person who collected payment"
-                                            name="collectedBy"
-                                            value={formData.collectedBy || ""}
-                                            onChange={handleInputChange}
-                                            disabled={!canEdit}
-                                            rows={2}
-                                            className="mt-1"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Notes Card */}
-                    <Card>
-                        <CardHeader className="border-b">
-                            <CardTitle className="flex items-center gap-3">
-                                <FaFileAlt className="h-5 w-5" />
-                                Notes
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-4">
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Additional Notes</Label>
-                                    <Textarea
-                                        placeholder="Enter additional notes (optional)"
-                                        name="notes"
-                                        value={formData.notes || ""}
-                                        onChange={handleInputChange}
-                                        disabled={!canEdit}
-                                        rows={4}
-                                        className="mt-1"
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* System Information Card */}
-                    <Card>
-                        <CardHeader className="border-b">
-                            <CardTitle className="flex items-center gap-3">
-                                <FaCog className="h-5 w-5" />
-                                System Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-4">
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Current User</Label>
-                                    <p className="font-semibold text-gray-900 mt-1">{username} ({role})</p>
-                                </div>
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Last Updated</Label>
-                                    <p className="font-semibold text-gray-900 mt-1">{new Date().toLocaleString()}</p>
-                                </div>
-                                {valuation.lastUpdatedBy && (
-                                    <div className="info-field">
-                                        <Label className="text-sm font-medium text-gray-600">Last Updated By</Label>
-                                        <p className="font-semibold text-gray-900 mt-1">{valuation.lastUpdatedBy}</p>
-                                    </div>
-                                )}
-                                <div className="info-field">
-                                    <Label className="text-sm font-medium text-gray-600">Form ID</Label>
-                                    <code className="px-3 py-1 rounded-lg text-sm font-mono mt-1 block border">{id}</code>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigate("/dashboard")}
+                        className="h-10 w-10 border-2 border-orange-200 hover:bg-orange-50 rounded-lg"
+                    >
+                        <FaArrowLeft className="h-4 w-4 text-orange-600" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Edit Valuation Form</h1>
+                        <p className="text-sm text-gray-500 mt-1">ID: {id}</p>
+                    </div>
                 </div>
 
-                {/* Property Directions Card */}
-                <Card>
-                    <CardHeader className="border-b">
-                        <CardTitle className="flex items-center gap-3">
-                            <FaCompass className="h-5 w-5" />
-                            Property Directions
-                        </CardTitle>
-                        <CardDescription>Enter property directions as per sale deed and site visit</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Status Badge */}
+                {valuation?.status && (
+                    <Badge className={`w-fit px-4 py-2 rounded-full font-bold ${statusColors[valuation.status]?.bg} ${statusColors[valuation.status]?.text}`}>
+                        {statusIcons[valuation.status]} {valuation.status.charAt(0).toUpperCase() + valuation.status.slice(1)}
+                    </Badge>
+                )}
 
-                            {/* AS PER SALE DEED Card */}
-                            <Card className="border">
-                                <CardHeader className="border-b">
-                                    <CardTitle className="text-center">AS PER SALE DEED</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <div className="compass-layout space-y-4">
-                                        <Input
-                                            placeholder="North"
-                                            value={formData.directions.north1}
-                                            onChange={(e) => handleDirectionChange('north1', e.target.value)}
-                                            className="text-center text-lg font-medium"
-                                            disabled={!canEdit}
-                                        />
-                                        <div className="flex gap-4 items-center justify-center">
+                {/* Main Content Grid - 2 Card Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    {/* Left Column - Form Info Card (1 column) */}
+                    <div className="lg:col-span-1">
+                        <Card className="h-fit border-0 shadow-lg bg-white rounded-2xl overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 border-b-0">
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <FaFileAlt className="h-5 w-5" />
+                                    Form Info
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-5">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Current User</p>
+                                    <p className="text-sm font-bold text-gray-900">{username} <span className="text-xs font-semibold text-orange-600">({role})</span></p>
+                                </div>
+                                <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Form Status</p>
+                                    <p className="text-sm font-bold text-gray-900">{valuation?.status?.charAt(0).toUpperCase() + valuation?.status?.slice(1)}</p>
+                                </div>
+                                <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</p>
+                                    <p className="text-sm font-bold text-gray-900">{new Date().toLocaleString()}</p>
+                                </div>
+                                {valuation?.lastUpdatedBy && (
+                                    <>
+                                        <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated By</p>
+                                            <p className="text-sm font-bold text-gray-900">{valuation.lastUpdatedBy}</p>
+                                        </div>
+                                    </>
+                                )}
+                                <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Form ID</p>
+                                    <code className="bg-orange-50 px-3 py-2 rounded-lg text-xs font-mono break-all text-orange-700 border border-orange-200 block">{id}</code>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Right Column - Main Form Card (3 columns) */}
+                    <div className="lg:col-span-3">
+                        <Card className="border-0 shadow-lg bg-white rounded-2xl overflow-hidden max-h-[calc(100vh-200px)] overflow-y-auto">
+                            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 border-b-0">
+                                <CardTitle className="text-xl font-bold">Property Details & Information</CardTitle>
+                                <p className="text-orange-100 text-sm mt-1">Fill in all required fields marked with *</p>
+                            </CardHeader>
+                            <CardContent className="p-8">
+                                <div className="space-y-8">
+
+                                    {/* Client Information Section */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-orange-50 to-white rounded-2xl border border-orange-100">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="clientName" className="text-sm font-bold text-gray-900">Client Name *</Label>
                                             <Input
-                                                placeholder="West"
-                                                value={formData.directions.west1}
-                                                onChange={(e) => handleDirectionChange('west1', e.target.value)}
-                                                className="text-center text-lg font-medium"
-                                                disabled={!canEdit}
-                                            />
-                                            <Card className="w-16 h-16 shadow-lg rounded-full flex items-center justify-center border">
-                                                <FaCompass className="h-8 w-8" />
-                                            </Card>
-                                            <Input
-                                                placeholder="East"
-                                                value={formData.directions.east1}
-                                                onChange={(e) => handleDirectionChange('east1', e.target.value)}
-                                                className="text-center text-lg font-medium"
-                                                disabled={!canEdit}
+                                                id="clientName"
+                                                placeholder="Enter client name"
+                                                name="clientName"
+                                                value={formData.clientName || ""}
+                                                onChange={handleInputChange}
+                                                disabled={!canEditField("clientName")}
+                                                className="h-11 text-sm rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
                                             />
                                         </div>
-                                        <Input
-                                            placeholder="South"
-                                            value={formData.directions.south1}
-                                            onChange={(e) => handleDirectionChange('south1', e.target.value)}
-                                            className="text-center text-lg font-medium"
-                                            disabled={!canEdit}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
 
-                            {/* AS PER SITE Card */}
-                            <Card className="border">
-                                <CardHeader className="border-b">
-                                    <CardTitle className="text-center">AS PER SITE</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <div className="compass-layout space-y-4">
-                                        <Input
-                                            placeholder="North"
-                                            value={formData.directions.north2}
-                                            onChange={(e) => handleDirectionChange('north2', e.target.value)}
-                                            className="text-center text-lg font-medium"
-                                            disabled={!canEdit}
-                                        />
-                                        <div className="flex gap-4 items-center justify-center">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mobileNumber" className="text-sm font-bold text-gray-900">Mobile Number *</Label>
                                             <Input
-                                                placeholder="West"
-                                                value={formData.directions.west2}
-                                                onChange={(e) => handleDirectionChange('west2', e.target.value)}
-                                                className="text-center text-lg font-medium"
-                                                disabled={!canEdit}
-                                            />
-                                            <Card className="w-16 h-16 shadow-lg rounded-full flex items-center justify-center border">
-                                                <FaCompass className="h-8 w-8" />
-                                            </Card>
-                                            <Input
-                                                placeholder="East"
-                                                value={formData.directions.east2}
-                                                onChange={(e) => handleDirectionChange('east2', e.target.value)}
-                                                className="text-center text-lg font-medium"
-                                                disabled={!canEdit}
+                                                id="mobileNumber"
+                                                placeholder="10-digit number"
+                                                name="mobileNumber"
+                                                value={formData.mobileNumber || ""}
+                                                onChange={handleInputChange}
+                                                maxLength={10}
+                                                inputMode="numeric"
+                                                disabled={!canEditField("mobileNumber")}
+                                                className="h-11 text-sm rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
                                             />
                                         </div>
-                                        <Input
-                                            placeholder="South"
-                                            value={formData.directions.south2}
-                                            onChange={(e) => handleDirectionChange('south2', e.target.value)}
-                                            className="text-center text-lg font-medium"
-                                            disabled={!canEdit}
-                                        />
+
+                                        <div className="md:col-span-2 space-y-2">
+                                            <Label htmlFor="address" className="text-sm font-bold text-gray-900">Address *</Label>
+                                            <Input
+                                                id="address"
+                                                placeholder="Enter complete address"
+                                                name="address"
+                                                value={formData.address || ""}
+                                                onChange={handleInputChange}
+                                                disabled={!canEditField("address")}
+                                                className="h-11 text-sm w-full rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                            />
+                                        </div>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </CardContent>
-                </Card>
 
-                {/* Location Details Card */}
-                <Card>
-                    <CardHeader className="border-b">
-                        <CardTitle className="flex items-center gap-3">
-                            <FaMapMarkerAlt className="h-5 w-5" />
-                            Location Images
-                        </CardTitle>
-                        <CardDescription>Upload location images</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="space-y-6">
-
-
-                            {/* Location Images Upload */}
-                            <Card className="border">
-                                <CardHeader className="border-b">
-                                    <CardTitle className="flex items-center gap-2">
-                                        <FaImage className="h-5 w-5" />
-                                        Location Images
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6">
+                                    {/* Bank Section */}
                                     <div className="space-y-4">
-                                        <input
-                                            type="file"
-                                            ref={locationFileInputRef}
-                                            accept="image/*"
-                                            onChange={handleLocationImageUpload}
-                                            style={{ display: 'none' }}
-                                            disabled={!canEdit}
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={() => locationFileInputRef.current?.click()}
-                                            className="flex items-center gap-2"
-                                            disabled={!canEdit}
-                                        >
-                                            <FaUpload className="h-4 w-4" />
-                                            Upload Location Images
-                                        </Button>
-
-                                        {/* Location Image Preview - Single Image Only */}
-                                        {locationImagePreviews.length > 0 && (
-                                            <Card className="relative w-32 h-32 border-2 border-dashed">
-                                                <CardContent className="p-0 h-full">
-                                                    <img
-                                                        src={locationImagePreviews[0].preview}
-                                                        alt="Location Preview"
-                                                        className="w-full h-full object-cover rounded"
-                                                    />
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">Bank Name *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {banks.map(bank => (
                                                     <Button
+                                                        key={bank}
                                                         type="button"
-                                                        onClick={() => removeLocationImage(0)}
-                                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        disabled={!canEdit}
+                                                        variant={bankName === bank ? "default" : "outline"}
+                                                        className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${bankName === bank
+                                                            ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                            : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            }`}
+                                                        onClick={() => setBankName(bank)}
+                                                        disabled={!canEditField("bankName")}
                                                     >
-                                                        ×
+                                                        {bank}
                                                     </Button>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            {/* Coordinates Card - Always show for location images section */}
-                             <Card className="border">
-                                 <CardHeader className="border-b">
-                                     <CardTitle className="flex items-center gap-2">
-                                         <FaLocationArrow className="h-5 w-5" />
-                                         GPS Coordinates
-                                         {formData.coordinates.latitude && formData.coordinates.longitude && " (from image metadata)"}
-                                     </CardTitle>
-                                 </CardHeader>
-                                 <CardContent className="p-6">
-                                     <div className="space-y-6">
-                                         {/* Coordinate Input Fields */}
-                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                             <div>
-                                                 <Label className="text-sm font-medium text-gray-700">Latitude</Label>
-                                                 <Input
-                                                     placeholder="Enter latitude"
-                                                     value={formData.coordinates.latitude || ''}
-                                                     onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
-                                                     className="mt-2"
-                                                     disabled={!canEdit}
-                                                 />
-                                                 {formData.coordinates.latitude && (
-                                                     <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs">
-                                                         <p className="font-semibold text-green-900">
-                                                             Latitude: {parseFloat(formData.coordinates.latitude).toFixed(6)}
-                                                         </p>
-                                                     </div>
-                                                 )}
-                                             </div>
-                                             <div>
-                                                 <Label className="text-sm font-medium text-gray-700">Longitude</Label>
-                                                 <Input
-                                                     placeholder="Enter longitude"
-                                                     value={formData.coordinates.longitude || ''}
-                                                     onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
-                                                     className="mt-2"
-                                                     disabled={!canEdit}
-                                                 />
-                                                 {formData.coordinates.longitude && (
-                                                     <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs">
-                                                         <p className="font-semibold text-green-900">
-                                                             Longitude: {parseFloat(formData.coordinates.longitude).toFixed(6)}
-                                                         </p>
-                                                     </div>
-                                                 )}
-                                             </div>
-                                         </div>
-
-
-
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Property Images Card */}
-                <Card>
-                    <CardHeader className="border-b">
-                        <CardTitle className="flex items-center gap-3">
-                            <FaUpload className="h-5 w-5" />
-                            Property Images
-                        </CardTitle>
-                        <CardDescription>Upload property images - 4 separate upload options</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="space-y-6">
-
-                            {/* 4 Upload Options */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {[1, 2, 3, 4].map((num) => (
-                                    <Card key={num} className="border-2 border-dashed transition-all cursor-pointer">
-                                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
-                                            <input
-                                                type="file"
-                                                ref={eval(`fileInputRef${num}`)}
-                                                multiple
-                                                accept="image/*"
-                                                onChange={(e) => handleImageUpload(e, num)}
-                                                style={{ display: 'none' }}
-                                                disabled={!canEdit}
-                                            />
-                                            <Button
-                                                type="button"
-                                                onClick={() => eval(`fileInputRef${num}.current?.click()`)}
-                                                variant="outline"
-                                                className="flex items-center gap-2 w-full h-full min-h-[100px] border-2 border-dashed"
-                                                disabled={!canEdit}
-                                            >
-                                                <div className="text-center">
-                                                    <FaUpload className="h-8 w-8 mb-2 mx-auto" />
-                                                    <div className="text-sm font-medium">Upload Images {num}</div>
-                                                </div>
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-
-                            {/* Combined Image Previews */}
-                            {imagePreviews.length > 0 && (
-                                <Card className="border">
-                                    <CardHeader className="border-b">
-                                        <CardTitle>
-                                            Uploaded Images ({imagePreviews.length} images)
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-6">
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                            {imagePreviews.map((preview, index) => (
-                                                <Card key={index} className="relative border border-gray-200 shadow-sm">
-                                                    <CardContent className="p-0">
-                                                        <img
-                                                            src={preview.preview}
-                                                            alt={`Property Preview ${index + 1}`}
-                                                            className="w-full h-32 object-cover rounded-t-lg"
+                                                ))}
+                                                <div className="relative">
+                                                    {bankName === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter bank name"
+                                                            value={formData.customBankName}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, customBankName: e.target.value }))}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!canEditField("bankName")}
                                                         />
-                                                        <div className="p-3 rounded-b-lg">
-                                                            <div className="text-xs flex justify-between">
-                                                                <span>Option {preview.inputNumber}</span>
-                                                                <span>{preview.file ? Math.round(preview.file.size / 1024) : ''}KB</span>
-                                                            </div>
-                                                        </div>
+                                                    ) : (
                                                         <Button
                                                             type="button"
-                                                            onClick={() => removeImage(index)}
-                                                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 bg-red-500 hover:bg-red-600"
-                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => setBankName("other")}
+                                                            disabled={!canEditField("bankName")}
+                                                        >
+                                                            Other
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* City Section */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">City *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {cities.map(c => (
+                                                    <Button
+                                                        key={c}
+                                                        type="button"
+                                                        variant={city === c ? "default" : "outline"}
+                                                        className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${city === c
+                                                            ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                            : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            }`}
+                                                        onClick={() => setCity(c)}
+                                                        disabled={!canEditField("city")}
+                                                    >
+                                                        {c}
+                                                    </Button>
+                                                ))}
+                                                <div className="relative">
+                                                    {city === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter city name"
+                                                            value={formData.customCity}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, customCity: e.target.value }))}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!canEditField("city")}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => setCity("other")}
+                                                            disabled={!canEditField("city")}
+                                                        >
+                                                            Other
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* DSA Section */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">Sales Agent (DSA) *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {dsaNames.map(dsa => (
+                                                    <Button
+                                                        key={dsa}
+                                                        type="button"
+                                                        variant={formData.dsa === dsa ? "default" : "outline"}
+                                                        className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${formData.dsa === dsa
+                                                            ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                            : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            }`}
+                                                        onClick={() => setFormData(prev => ({ ...prev, dsa: dsa, customDsa: "" }))}
+                                                        disabled={!canEditField("dsa")}
+                                                    >
+                                                        {dsa}
+                                                    </Button>
+                                                ))}
+                                                <div className="relative">
+                                                    {formData.dsa === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter DSA name"
+                                                            value={formData.customDsa}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, customDsa: e.target.value }))}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!canEditField("dsa")}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => setFormData(prev => ({ ...prev, dsa: "other", customDsa: "" }))}
+                                                            disabled={!canEditField("dsa")}
+                                                        >
+                                                            Other
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Engineer Name Section */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">Engineer Name</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {["Bhavesh", "Bhanu", "Ronak", "Mukesh"].map(engineer => (
+                                                    <Button
+                                                        key={engineer}
+                                                        type="button"
+                                                        variant={formData.engineerName === engineer ? "default" : "outline"}
+                                                        className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${formData.engineerName === engineer
+                                                            ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                            : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            }`}
+                                                        onClick={() => setFormData(prev => ({ ...prev, engineerName: engineer, customEngineerName: "" }))}
+                                                        disabled={!canEditField("engineerName")}
+                                                    >
+                                                        {engineer}
+                                                    </Button>
+                                                ))}
+                                                <div className="relative">
+                                                    {formData.engineerName === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter engineer name"
+                                                            value={formData.customEngineerName}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, customEngineerName: e.target.value }))}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!canEditField("engineerName")}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => setFormData(prev => ({ ...prev, engineerName: "other", customEngineerName: "" }))}
+                                                            disabled={!canEditField("engineerName")}
+                                                        >
+                                                            Other
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
+                                    {/* Payment Section */}
+                                    <div className="space-y-4 p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border border-green-100">
+                                        <Label className="text-sm font-bold text-gray-900 block">Payment Status *</Label>
+                                        <RadioGroup value={formData.payment} onValueChange={(val) => setFormData(prev => ({ ...prev, payment: val }))} disabled={!canEditField("payment")} className="flex gap-6">
+                                            <div className="flex items-center gap-3 cursor-pointer">
+                                                <RadioGroupItem value="yes" id="payment-yes" disabled={!canEditField("payment")} className="w-5 h-5 border-2 border-green-500" />
+                                                <Label htmlFor="payment-yes" className="text-base font-semibold cursor-pointer text-gray-900">Payment Collected</Label>
+                                            </div>
+                                            <div className="flex items-center gap-3 cursor-pointer">
+                                                <RadioGroupItem value="no" id="payment-no" disabled={!canEditField("payment")} className="w-5 h-5 border-2 border-red-500" />
+                                                <Label htmlFor="payment-no" className="text-base font-semibold cursor-pointer text-gray-900">Pending</Label>
+                                            </div>
+                                        </RadioGroup>
+
+                                        {formData.payment === "yes" && (
+                                            <div className="mt-4 pt-4 border-t border-green-200 space-y-2">
+                                                <Label htmlFor="collectedBy" className="text-sm font-bold text-gray-900">Collected By *</Label>
+                                                <Input
+                                                    id="collectedBy"
+                                                    placeholder="Enter collector's name/details"
+                                                    name="collectedBy"
+                                                    value={formData.collectedBy}
+                                                    onChange={handleInputChange}
+                                                    className="h-11 text-sm w-full rounded-xl border-2 border-green-300 focus:border-green-500 focus:ring-green-200 font-medium bg-white"
+                                                    disabled={!canEditField("collectedBy")}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
+                                    {/* Notes Section */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <FaFileAlt className="h-5 w-5 text-orange-600" />
+                                            Additional Notes
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <Textarea
+                                                placeholder="Enter any additional notes or comments..."
+                                                name="notes"
+                                                value={formData.notes || ""}
+                                                onChange={handleInputChange}
+                                                disabled={!canEdit}
+                                                rows={4}
+                                                className="rounded-xl border-2 border-orange-300 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
+                                    {/* Property Directions Section */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <FaCompass className="h-5 w-5 text-orange-600" />
+                                            Property Directions
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mb-4">Enter property directions as per sale deed and site visit</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                                            {/* AS PER SALE DEED Card */}
+                                            <Card className="border-2 border-red-200 rounded-2xl">
+                                                <CardHeader className="bg-red-50 border-b-2 border-red-200 p-4">
+                                                    <CardTitle className="text-center text-red-700 font-bold">AS PER SALE DEED</CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="p-6">
+                                                    <div className="compass-layout space-y-4">
+                                                        <Input
+                                                            placeholder="North"
+                                                            value={formData.directions.north1}
+                                                            onChange={(e) => handleDirectionChange('north1', e.target.value)}
+                                                            className="text-center text-lg font-bold h-11 rounded-xl border-2 border-red-200 focus:border-red-500 focus:ring-red-200"
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <div className="flex gap-4 items-center justify-center">
+                                                            <Input
+                                                                placeholder="West"
+                                                                value={formData.directions.west1}
+                                                                onChange={(e) => handleDirectionChange('west1', e.target.value)}
+                                                                className="text-center text-lg font-medium"
+                                                                disabled={!canEdit}
+                                                            />
+                                                            <Card className="w-16 h-16 shadow-lg rounded-full flex items-center justify-center border">
+                                                                <FaCompass className="h-8 w-8" />
+                                                            </Card>
+                                                            <Input
+                                                                placeholder="East"
+                                                                value={formData.directions.east1}
+                                                                onChange={(e) => handleDirectionChange('east1', e.target.value)}
+                                                                className="text-center text-lg font-medium"
+                                                                disabled={!canEdit}
+                                                            />
+                                                        </div>
+                                                        <Input
+                                                            placeholder="South"
+                                                            value={formData.directions.south1}
+                                                            onChange={(e) => handleDirectionChange('south1', e.target.value)}
+                                                            className="text-center text-lg font-medium"
+                                                            disabled={!canEdit}
+                                                        />
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+
+                                            {/* AS PER SITE Card */}
+                                            <Card className="border">
+                                                <CardHeader className="border-b">
+                                                    <CardTitle className="text-center">AS PER SITE</CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="p-6">
+                                                    <div className="compass-layout space-y-4">
+                                                        <Input
+                                                            placeholder="North"
+                                                            value={formData.directions.north2}
+                                                            onChange={(e) => handleDirectionChange('north2', e.target.value)}
+                                                            className="text-center text-lg font-medium"
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <div className="flex gap-4 items-center justify-center">
+                                                            <Input
+                                                                placeholder="West"
+                                                                value={formData.directions.west2}
+                                                                onChange={(e) => handleDirectionChange('west2', e.target.value)}
+                                                                className="text-center text-lg font-medium"
+                                                                disabled={!canEdit}
+                                                            />
+                                                            <Card className="w-16 h-16 shadow-lg rounded-full flex items-center justify-center border">
+                                                                <FaCompass className="h-8 w-8" />
+                                                            </Card>
+                                                            <Input
+                                                                placeholder="East"
+                                                                value={formData.directions.east2}
+                                                                onChange={(e) => handleDirectionChange('east2', e.target.value)}
+                                                                className="text-center text-lg font-medium"
+                                                                disabled={!canEdit}
+                                                            />
+                                                        </div>
+                                                        <Input
+                                                            placeholder="South"
+                                                            value={formData.directions.south2}
+                                                            onChange={(e) => handleDirectionChange('south2', e.target.value)}
+                                                            className="text-center text-lg font-medium"
+                                                            disabled={!canEdit}
+                                                        />
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
+                                    {/* Location Images Section */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <FaMapMarkerAlt className="h-5 w-5 text-orange-600" />
+                                            Location Images
+                                        </h3>
+                                        <div className="space-y-6">
+
+                                            {/* Location Images Upload */}
+                                            <Card className="border">
+                                                <CardHeader className="border-b">
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        <FaImage className="h-5 w-5" />
+                                                        Location Images
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="p-6">
+                                                    <div className="space-y-4">
+                                                        <input
+                                                            type="file"
+                                                            ref={locationFileInputRef}
+                                                            accept="image/*"
+                                                            onChange={handleLocationImageUpload}
+                                                            style={{ display: 'none' }}
+                                                            disabled={!canEdit}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => locationFileInputRef.current?.click()}
+                                                            className="flex items-center gap-2"
                                                             disabled={!canEdit}
                                                         >
-                                                            ×
+                                                            <FaUpload className="h-4 w-4" />
+                                                            Upload Location Images
                                                         </Button>
+
+                                                        {/* Location Image Preview - Single Image Only */}
+                                                        {locationImagePreviews.length > 0 && (
+                                                            <Card className="relative w-32 h-32 border-2 border-dashed">
+                                                                <CardContent className="p-0 h-full">
+                                                                    <img
+                                                                        src={locationImagePreviews[0].preview}
+                                                                        alt="Location Preview"
+                                                                        className="w-full h-full object-cover rounded"
+                                                                    />
+                                                                    <Button
+                                                                        type="button"
+                                                                        onClick={() => removeLocationImage(0)}
+                                                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                                                                        variant="destructive"
+                                                                        size="sm"
+                                                                        disabled={!canEdit}
+                                                                    >
+                                                                        ×
+                                                                    </Button>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+
+                                            {/* Coordinates Card */}
+                                            <Card className="border">
+                                                <CardHeader className="border-b">
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        <FaLocationArrow className="h-5 w-5" />
+                                                        GPS Coordinates
+                                                        {formData.coordinates.latitude && formData.coordinates.longitude && " (from image metadata)"}
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="p-6">
+                                                    <div className="space-y-6">
+                                                        {/* Coordinate Input Fields */}
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <div>
+                                                                <Label className="text-sm font-medium text-gray-700">Latitude</Label>
+                                                                <Input
+                                                                    placeholder="Enter latitude"
+                                                                    value={formData.coordinates.latitude || ''}
+                                                                    onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
+                                                                    className="mt-2"
+                                                                    disabled={!canEdit}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-sm font-medium text-gray-700">Longitude</Label>
+                                                                <Input
+                                                                    placeholder="Enter longitude"
+                                                                    value={formData.coordinates.longitude || ''}
+                                                                    onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
+                                                                    className="mt-2"
+                                                                    disabled={!canEdit}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
+                                    {/* Property Images Section */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <FaUpload className="h-5 w-5 text-orange-600" />
+                                            Property Images
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mb-4">Upload property images - 4 separate upload options</p>
+                                        <div className="space-y-6">
+
+                                            {/* 4 Upload Options */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {[1, 2, 3, 4].map((num) => (
+                                                    <Card key={num} className="border-2 border-dashed transition-all cursor-pointer">
+                                                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
+                                                            <input
+                                                                type="file"
+                                                                ref={eval(`fileInputRef${num}`)}
+                                                                multiple
+                                                                accept="image/*"
+                                                                onChange={(e) => handleImageUpload(e, num)}
+                                                                style={{ display: 'none' }}
+                                                                disabled={!canEdit}
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                onClick={() => eval(`fileInputRef${num}.current?.click()`)}
+                                                                variant="outline"
+                                                                className="flex items-center gap-2 w-full h-full min-h-[100px] border-2 border-dashed"
+                                                                disabled={!canEdit}
+                                                            >
+                                                                <div className="text-center">
+                                                                    <FaUpload className="h-8 w-8 mb-2 mx-auto" />
+                                                                    <div className="text-sm font-medium">Upload Images {num}</div>
+                                                                </div>
+                                                            </Button>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+
+                                            {/* Combined Image Previews */}
+                                            {imagePreviews.length > 0 && (
+                                                <Card className="border">
+                                                    <CardHeader className="border-b">
+                                                        <CardTitle>
+                                                            Uploaded Images ({imagePreviews.length} images)
+                                                        </CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent className="p-6">
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                                            {imagePreviews.map((preview, index) => (
+                                                                <Card key={index} className="relative border border-gray-200 shadow-sm">
+                                                                    <CardContent className="p-0">
+                                                                        <img
+                                                                            src={preview.preview}
+                                                                            alt={`Property Preview ${index + 1}`}
+                                                                            className="w-full h-32 object-cover rounded-t-lg"
+                                                                        />
+                                                                        <div className="p-3 rounded-b-lg">
+                                                                            <div className="text-xs flex justify-between">
+                                                                                <span>Option {preview.inputNumber}</span>
+                                                                                <span>{preview.file ? Math.round(preview.file.size / 1024) : ''}KB</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <Button
+                                                                            type="button"
+                                                                            onClick={() => removeImage(index)}
+                                                                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 bg-red-500 hover:bg-red-600"
+                                                                            size="sm"
+                                                                            disabled={!canEdit}
+                                                                        >
+                                                                            ×
+                                                                        </Button>
+                                                                    </CardContent>
+                                                                </Card>
+                                                            ))}
+                                                        </div>
                                                     </CardContent>
                                                 </Card>
-                                            ))}
+                                            )}
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                                        </div>
 
-            </div>
+                                        {/* Action Buttons */}
+                                        <div className="border-t-2 border-gray-200 pt-6 mt-6">
+                                        <div className="flex gap-3">
+                                            {canEdit && (
+                                                <>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={onFinish}
+                                                        disabled={loading}
+                                                        className="flex-1 h-12 text-base font-bold rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all"
+                                                        title="Save Changes"
+                                                    >
+                                                        Save Changes
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() => navigate("/dashboard")}
+                                                        disabled={loading}
+                                                        className="flex-1 h-12 text-base font-bold rounded-xl border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                </>
+                                            )}
 
-            {/* Floating Action Buttons - Right Side */}
-            <div className="fixed right-6 bottom-6 flex flex-col gap-4 z-40">
-                {canEdit && (
-                    <Button
-                        type="button"
-                        size="icon"
-                        onClick={onFinish}
-                        disabled={loading}
-                        className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow"
-                        title="Save Changes"
-                    >
-                        <FaSave className="h-6 w-6" />
-                    </Button>
-                )}
+                                            {canApprove && (
+                                                <>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => handleManagerAction("approve")}
+                                                        disabled={loading}
+                                                        className="flex-1 h-12 text-base font-bold rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all"
+                                                        title="Approve Form"
+                                                    >
+                                                        Approve
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => handleManagerAction("reject")}
+                                                        disabled={loading}
+                                                        className="flex-1 h-12 text-base font-bold rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl transition-all"
+                                                        title="Reject Form"
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                        </div>
 
-                {canApprove && (
-                    <>
-                        <Button
-                            type="button"
-                            size="icon"
-                            onClick={() => handleManagerAction("approve")}
-                            disabled={loading}
-                            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow bg-green-600 hover:bg-green-700"
-                            title="Approve Form"
-                        >
-                            <FaThumbsUp className="h-6 w-6" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            onClick={() => handleManagerAction("reject")}
-                            disabled={loading}
-                            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow bg-red-600 hover:bg-red-700"
-                            title="Reject Form"
-                        >
-                            <FaThumbsDown className="h-6 w-6" />
-                        </Button>
-                    </>
-                )}
+                                        </div>
+                                        </CardContent>
+                                        </Card>
+                                        </div>
+                                        </div>
             </div>
 
             {/* Approval/Rejection Dialog */}

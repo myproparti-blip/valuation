@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { FaArrowLeft, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaTimes, FaFileAlt } from "react-icons/fa";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea, Label, RadioGroup, RadioGroupItem } from "../components/ui";
 import { v4 as uuidv4 } from "uuid";
 import { submitFile } from "../services/fileService";
@@ -46,7 +46,7 @@ const FormPage = ({ user, onLogin }) => {
     const defaultBanks = ["SBI", "HDFC", "ICICI", "Axis", "PNB", "BOB"];
     const defaultCities = ["Surat", "vadodara", "Ahmedabad", "Kheda",];
     const defaultDsaNames = ["John Doe", "Jane Smith", "Mike Johnson"];
-    const defaultEngineers = ["Bhavesh", "Bhanu", "Ronak","Mukesh"];
+    const defaultEngineers = ["Bhavesh", "Bhanu", "Ronak", "Mukesh"];
 
     const [banks, setBanks] = useState([...defaultBanks]);
     const [cities, setCities] = useState([...defaultCities]);
@@ -61,15 +61,15 @@ const FormPage = ({ user, onLogin }) => {
         // Prevent race conditions - only one load at a time
         if (loadingRef.current) return;
         loadingRef.current = true;
-        
+
         try {
             // Clear entire cache before fetching
             invalidateCache("options");
-            
+
             // Add timestamp to URL to bypass any remaining cache
             const timestamp = Date.now();
             const params = { _t: timestamp };
-            
+
             // Fetch fresh data with timestamp parameter
             const [customBanks, customCities, customDsas, customEngineers] = await Promise.all([
                 (async () => {
@@ -108,7 +108,7 @@ const FormPage = ({ user, onLogin }) => {
         } catch (error) {
             console.error("Error loading custom options:", error);
             if (!isMountedRef.current) return;
-            
+
             // Fallback to defaults on error
             setBanks([...defaultBanks]);
             setCities([...defaultCities]);
@@ -124,28 +124,28 @@ const FormPage = ({ user, onLogin }) => {
     useEffect(() => {
         isMountedRef.current = true;
         loadingRef.current = false;
-        
+
         // Reset data loaded flag when route changes
         setIsDataLoaded(false);
-        
+
         // Load immediately on mount
         loadCustomOptions();
-        
+
         // Reload when browser tab becomes visible
         const handleVisibilityChange = () => {
             if (!document.hidden) {
                 loadCustomOptions();
             }
         };
-        
+
         // Reload when window gains focus
         const handleFocus = () => {
             loadCustomOptions();
         };
-        
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleFocus);
-        
+
         return () => {
             isMountedRef.current = false;
             document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -174,7 +174,7 @@ const FormPage = ({ user, onLogin }) => {
     const handleBankChange = (val) => {
         // Prevent unselecting custom options - only allow selection, not clearing
         if (bankName === val) return;
-        
+
         if (val === "other") {
             setBankName("other");
             setFormData(prev => ({ ...prev, bankName: "other", customBankName: "" }));
@@ -187,7 +187,7 @@ const FormPage = ({ user, onLogin }) => {
     const handleCityChange = (val) => {
         // Prevent unselecting custom options - only allow selection, not clearing
         if (city === val) return;
-        
+
         if (val === "other") {
             setCity("other");
             setFormData(prev => ({ ...prev, city: "other", customCity: "" }));
@@ -200,7 +200,7 @@ const FormPage = ({ user, onLogin }) => {
     const handleDsaChange = (val) => {
         // Prevent unselecting custom options - only allow selection, not clearing
         if (dsa === val) return;
-        
+
         if (val === "other") {
             setDsa("other");
             setFormData(prev => ({ ...prev, dsa: "other", customDsa: "" }));
@@ -213,7 +213,7 @@ const FormPage = ({ user, onLogin }) => {
     const handleEngineerChange = (val) => {
         // Prevent unselecting custom options - only allow selection, not clearing
         if (engineerName === val) return;
-        
+
         if (val === "other") {
             setEngineerName("other");
             setFormData(prev => ({ ...prev, engineerName: "other", customEngineerName: "" }));
@@ -245,10 +245,10 @@ const FormPage = ({ user, onLogin }) => {
     const deleteCustomEntry = async (type, value) => {
         try {
             await deleteCustomOption(type, value);
-            
+
             // Clear entire cache
             invalidateCache("options");
-            
+
             // Optimistically remove from UI
             if (type === "banks") {
                 setBanks(prev => prev && prev.length > 0 ? prev.filter(item => item !== value) : [...defaultBanks]);
@@ -259,9 +259,9 @@ const FormPage = ({ user, onLogin }) => {
             } else if (type === "engineers") {
                 setEngineers(prev => prev && prev.length > 0 ? prev.filter(item => item !== value) : [...defaultEngineers]);
             }
-            
+
             showSuccess(`${type} option deleted successfully`);
-            
+
             // Reload fresh data after deletion
             setTimeout(() => {
                 loadCustomOptions();
@@ -376,11 +376,11 @@ const FormPage = ({ user, onLogin }) => {
 
             showSuccess("Form submitted successfully!");
             dispatch(hideLoader());
-            
+
             // Keep custom options in state before navigating
             // This ensures they persist for future use
             loadCustomOptions();
-            
+
             // Navigate after success message
             setTimeout(() => {
                 navigate("/dashboard", { replace: true });
@@ -393,246 +393,269 @@ const FormPage = ({ user, onLogin }) => {
     };
 
     return (
-        <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-2 overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 p-4 md:p-6">
             {!isLoggedIn && (
                 <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-6 max-w-sm shadow-lg">
-                        <p className="text-center font-semibold">Please login to create a new form</p>
-                        <p className="text-center text-sm text-muted-foreground mt-2">You are currently viewing in read-only mode</p>
+                    <div className="bg-white rounded-2xl p-8 max-w-sm shadow-2xl">
+                        <p className="text-center font-bold text-lg text-gray-900">Please login to create a new form</p>
+                        <p className="text-center text-sm text-gray-600 mt-3">You are currently viewing in read-only mode</p>
                     </div>
                 </div>
             )}
-            <div className="h-full max-w-6xl mx-auto flex flex-col">
+            <div className="max-w-7xl mx-auto flex flex-col gap-6">
                 {/* Header */}
-                <div className="flex items-center gap-2 mb-2 flex-shrink-0">
+                <div className="flex items-center gap-3 mb-2">
                     <Button
                         variant="outline"
                         size="icon"
                         onClick={() => navigate("/dashboard")}
-                        className="h-8 w-8"
+                        className="h-10 w-10 border-2 border-orange-200 hover:bg-orange-50 rounded-lg"
                     >
-                        <FaArrowLeft className="h-3 w-3" />
+                        <FaArrowLeft className="h-4 w-4 text-orange-600" />
                     </Button>
                     <div>
-                        <h1 className="text-lg font-bold">Create New Valuation Form {!isLoggedIn && "(Read-Only)"}</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">New Valuation Form</h1>
+                        <p className="text-sm text-gray-500 mt-1">{!isLoggedIn && "(Read-Only Mode)"}</p>
                     </div>
                 </div>
 
                 {/* Main Content Grid */}
-                <div className="grid grid-cols-12 gap-2 h-full flex-1 overflow-hidden">
-                    {/* Left Column - Form Info */}
-                    <div className="col-span-3">
-                        <Card className="h-full">
-                            <CardHeader className="p-3 pb-2">
-                                <CardTitle className="text-sm">Form Information</CardTitle>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    {/* Left Column - Form Info Card */}
+                    <div className="lg:col-span-1">
+                        <Card className="border-0 shadow-lg bg-white rounded-2xl overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 border-b-0">
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <FaFileAlt className="h-5 w-5" />
+                                    Form Info
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-3 space-y-3 text-xs">
-                                <div>
-                                    <p className="text-muted-foreground mb-1">Submitted By</p>
-                                    <p className="font-semibold">{username}</p>
+                            <CardContent className="p-4 space-y-3">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Submitted By</p>
+                                    <p className="text-sm font-bold text-gray-900">{username}</p>
                                 </div>
-                                <div>
-                                    <p className="text-muted-foreground mb-1">Day</p>
-                                    <p className="font-semibold">{day}</p>
+                                <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Day</p>
+                                    <p className="text-sm font-bold text-gray-900">{day}</p>
                                 </div>
-                                <div>
-                                    <p className="text-muted-foreground mb-1">Date & Time</p>
-                                    <p className="font-semibold">{dateTime}</p>
+                                <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</p>
+                                    <p className="text-sm font-bold text-gray-900">{dateTime}</p>
                                 </div>
-                                <div>
-                                    <p className="text-muted-foreground mb-1">Form ID</p>
-                                    <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono break-all">{uniqueId}</code>
+                                <div className="h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Form ID</p>
+                                    <code className="bg-orange-50 px-3 py-2 rounded-lg text-xs font-mono break-all text-orange-700 border border-orange-200 block">{uniqueId}</code>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
 
                     {/* Right Column - Main Form */}
-                    <div className="col-span-9 overflow-y-auto">
-                        <Card className="h-full">
-                            <CardContent className="p-4">
-                                <form onSubmit={onFinish} className="grid grid-cols-2 gap-4">
+                    <div className="lg:col-span-3 overflow-y-auto max-h-[calc(100vh-200px)]">
+                        <Card className="border-0 shadow-lg bg-white rounded-2xl overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 border-b-0">
+                                <CardTitle className="text-xl font-bold">Property Details</CardTitle>
+                                <p className="text-orange-100 text-sm mt-1">Fill in all required fields marked with *</p>
+                            </CardHeader>
+                            <CardContent className="p-8">
+                                <form onSubmit={onFinish} className="space-y-8">
 
                                     {/* Bank Section */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label className="text-sm font-semibold">Bank Name *</Label>
-                                        <div className="grid grid-cols-4 gap-1">
-                                            {banks && banks.length > 0 && banks.map(name => (
-                                                <div key={name} className="relative group">
-                                                    <Button
-                                                        type="button"
-                                                        variant={bankName === name ? "default" : "outline"}
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleBankChange(name)}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        {name}
-                                                    </Button>
-                                                    {!defaultBanks.includes(name) && (
-                                                        <button
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">Bank Name *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {banks && banks.length > 0 && banks.map(name => (
+                                                    <div key={name} className="relative group">
+                                                        <Button
                                                             type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                deleteCustomEntry("banks", name);
-                                                            }}
-                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            variant={bankName === name ? "default" : "outline"}
+                                                            className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${bankName === name
+                                                                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                                    : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                                }`}
+                                                            onClick={() => handleBankChange(name)}
                                                             disabled={!isLoggedIn}
-                                                            title="Delete this custom option"
                                                         >
-                                                            <FaTimes className="h-3 w-3" />
-                                                        </button>
+                                                            {name}
+                                                        </Button>
+                                                        {!defaultBanks.includes(name) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteCustomEntry("banks", name);
+                                                                }}
+                                                                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                                disabled={!isLoggedIn}
+                                                                title="Delete this custom option"
+                                                            >
+                                                                <FaTimes className="h-3 w-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <div className="relative">
+                                                    {bankName === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter bank name"
+                                                            value={formData.customBankName}
+                                                            onChange={(e) => handleCustomInputChange(e, "customBankName")}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!isLoggedIn}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => handleBankChange("other")}
+                                                            disabled={!isLoggedIn}
+                                                        >
+                                                            Other
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            ))}
-                                            <div className="relative">
-                                                {bankName === "other" ? (
-                                                    <Input
-                                                        type="text"
-                                                        placeholder="Type bank name"
-                                                        value={formData.customBankName}
-                                                        onChange={(e) => handleCustomInputChange(e, "customBankName")}
-                                                        className="h-8 text-xs"
-                                                        autoFocus
-                                                        disabled={!isLoggedIn}
-                                                    />
-                                                ) : (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleBankChange("other")}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        Other
-                                                    </Button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* City Section */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label className="text-sm font-semibold">City *</Label>
-                                        <div className="grid grid-cols-3 gap-1">
-                                            {cities && cities.length > 0 && cities.map(name => (
-                                                <div key={name} className="relative group">
-                                                    <Button
-                                                        type="button"
-                                                        variant={city === name ? "default" : "outline"}
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleCityChange(name)}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        {name}
-                                                    </Button>
-                                                    {!defaultCities.includes(name) && (
-                                                        <button
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">City *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {cities && cities.length > 0 && cities.map(name => (
+                                                    <div key={name} className="relative group">
+                                                        <Button
                                                             type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                deleteCustomEntry("cities", name);
-                                                            }}
-                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            variant={city === name ? "default" : "outline"}
+                                                            className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${city === name
+                                                                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                                    : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                                }`}
+                                                            onClick={() => handleCityChange(name)}
                                                             disabled={!isLoggedIn}
-                                                            title="Delete this custom option"
                                                         >
-                                                            <FaTimes className="h-3 w-3" />
-                                                        </button>
+                                                            {name}
+                                                        </Button>
+                                                        {!defaultCities.includes(name) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteCustomEntry("cities", name);
+                                                                }}
+                                                                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                                disabled={!isLoggedIn}
+                                                                title="Delete this custom option"
+                                                            >
+                                                                <FaTimes className="h-3 w-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <div className="relative">
+                                                    {city === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter city name"
+                                                            value={formData.customCity}
+                                                            onChange={(e) => handleCustomInputChange(e, "customCity")}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!isLoggedIn}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => handleCityChange("other")}
+                                                            disabled={!isLoggedIn}
+                                                        >
+                                                            Other
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            ))}
-                                            <div className="relative">
-                                                {city === "other" ? (
-                                                    <Input
-                                                        type="text"
-                                                        placeholder="Type city name"
-                                                        value={formData.customCity}
-                                                        onChange={(e) => handleCustomInputChange(e, "customCity")}
-                                                        className="h-8 text-xs"
-                                                        autoFocus
-                                                        disabled={!isLoggedIn}
-                                                    />
-                                                ) : (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleCityChange("other")}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        Other
-                                                    </Button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Client Information */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="clientName" className="text-sm font-semibold">Client Name *</Label>
-                                        <Input
-                                            id="clientName"
-                                            placeholder="Client name"
-                                            name="clientName"
-                                            value={formData.clientName}
-                                            onChange={handleInputChange}
-                                            className="h-8 text-sm"
-                                            disabled={!isLoggedIn}
-                                        />
-                                    </div>
+                                    {/* Client Information Section */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-orange-50 to-white rounded-2xl border border-orange-100">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="clientName" className="text-sm font-bold text-gray-900">Client Name *</Label>
+                                            <Input
+                                                id="clientName"
+                                                placeholder="Enter client name"
+                                                name="clientName"
+                                                value={formData.clientName}
+                                                onChange={handleInputChange}
+                                                className="h-11 text-sm rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                                disabled={!isLoggedIn}
+                                            />
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="mobileNumber" className="text-sm font-semibold">Mobile Number *</Label>
-                                        <Input
-                                            id="mobileNumber"
-                                            placeholder="10-digit number"
-                                            name="mobileNumber"
-                                            value={formData.mobileNumber}
-                                            onChange={handleInputChange}
-                                            className="h-8 text-sm"
-                                            maxLength={10}
-                                            inputMode="numeric"
-                                            disabled={!isLoggedIn}
-                                        />
-                                    </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mobileNumber" className="text-sm font-bold text-gray-900">Mobile Number *</Label>
+                                            <Input
+                                                id="mobileNumber"
+                                                placeholder="10-digit number"
+                                                name="mobileNumber"
+                                                value={formData.mobileNumber}
+                                                onChange={handleInputChange}
+                                                className="h-11 text-sm rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                                maxLength={10}
+                                                inputMode="numeric"
+                                                disabled={!isLoggedIn}
+                                            />
+                                        </div>
 
-                                    {/* Address */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="address" className="text-sm font-semibold">Address *</Label>
-                                        <Input
-                                            id="address"
-                                            placeholder="Enter address"
-                                            name="address"
-                                            value={formData.address}
-                                            onChange={handleInputChange}
-                                            className="text-sm w-full"
-                                            disabled={!isLoggedIn}
-                                        />
+                                        {/* Address */}
+                                        <div className="md:col-span-2 space-y-2">
+                                            <Label htmlFor="address" className="text-sm font-bold text-gray-900">Address *</Label>
+                                            <Input
+                                                id="address"
+                                                placeholder="Enter complete address"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                className="h-11 text-sm w-full rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                                disabled={!isLoggedIn}
+                                            />
+                                        </div>
                                     </div>
                                     {/* Payment Section */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label className="text-sm font-semibold">Payment Collected? *</Label>
-                                        <RadioGroup value={payment} onValueChange={!isLoggedIn ? undefined : setPayment} className="flex gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <RadioGroupItem value="yes" id="payment-yes" />
-                                                <Label htmlFor="payment-yes" className="text-sm font-normal cursor-pointer">Yes</Label>
+                                    <div className="space-y-4 p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border border-green-100">
+                                        <Label className="text-sm font-bold text-gray-900 block">Payment Status *</Label>
+                                        <RadioGroup value={payment} onValueChange={!isLoggedIn ? undefined : setPayment} className="flex gap-6">
+                                            <div className="flex items-center gap-3 cursor-pointer">
+                                                <RadioGroupItem value="yes" id="payment-yes" className="w-5 h-5 border-2 border-green-500" />
+                                                <Label htmlFor="payment-yes" className="text-base font-semibold cursor-pointer text-gray-900">Payment Collected</Label>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <RadioGroupItem value="no" id="payment-no" />
-                                                <Label htmlFor="payment-no" className="text-sm font-normal cursor-pointer">No</Label>
+                                            <div className="flex items-center gap-3 cursor-pointer">
+                                                <RadioGroupItem value="no" id="payment-no" className="w-5 h-5 border-2 border-red-500" />
+                                                <Label htmlFor="payment-no" className="text-base font-semibold cursor-pointer text-gray-900">Pending</Label>
                                             </div>
                                         </RadioGroup>
 
                                         {payment === "yes" && (
-                                            <div className="space-y-1">
-                                                <Label htmlFor="collectedBy" className="text-sm font-semibold">Collected By</Label>
+                                            <div className="mt-4 pt-4 border-t border-green-200 space-y-2">
+                                                <Label htmlFor="collectedBy" className="text-sm font-bold text-gray-900">Collected By *</Label>
                                                 <Input
                                                     id="collectedBy"
-                                                    placeholder="Collector details"
+                                                    placeholder="Enter collector's name/details"
                                                     name="collectedBy"
                                                     value={formData.collectedBy}
                                                     onChange={handleInputChange}
-                                                    className="text-sm w-full"
+                                                    className="h-11 text-sm w-full rounded-xl border-2 border-green-300 focus:border-green-500 focus:ring-green-200 font-medium bg-white"
                                                     disabled={!isLoggedIn}
                                                 />
                                             </div>
@@ -640,140 +663,149 @@ const FormPage = ({ user, onLogin }) => {
                                     </div>
 
                                     {/* DSA Section */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label className="text-sm font-semibold">Sales Agent (DSA) *</Label>
-                                        <div className="grid grid-cols-4 gap-1">
-                                            {dsaNames && dsaNames.length > 0 && dsaNames.map(name => (
-                                                <div key={name} className="relative group">
-                                                    <Button
-                                                        type="button"
-                                                        variant={dsa === name ? "default" : "outline"}
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleDsaChange(name)}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        {name}
-                                                    </Button>
-                                                    {!defaultDsaNames.includes(name) && (
-                                                        <button
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">Sales Agent (DSA) *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {dsaNames && dsaNames.length > 0 && dsaNames.map(name => (
+                                                    <div key={name} className="relative group">
+                                                        <Button
                                                             type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                deleteCustomEntry("dsas", name);
-                                                            }}
-                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            variant={dsa === name ? "default" : "outline"}
+                                                            className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${dsa === name
+                                                                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                                    : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                                }`}
+                                                            onClick={() => handleDsaChange(name)}
                                                             disabled={!isLoggedIn}
-                                                            title="Delete this custom option"
                                                         >
-                                                            <FaTimes className="h-3 w-3" />
-                                                        </button>
+                                                            {name}
+                                                        </Button>
+                                                        {!defaultDsaNames.includes(name) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteCustomEntry("dsas", name);
+                                                                }}
+                                                                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                                disabled={!isLoggedIn}
+                                                                title="Delete this custom option"
+                                                            >
+                                                                <FaTimes className="h-3 w-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <div className="relative">
+                                                    {dsa === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter DSA name"
+                                                            value={formData.customDsa}
+                                                            onChange={(e) => handleCustomInputChange(e, "customDsa")}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!isLoggedIn}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => handleDsaChange("other")}
+                                                            disabled={!isLoggedIn}
+                                                        >
+                                                            Other
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            ))}
-                                            <div className="relative">
-                                                {dsa === "other" ? (
-                                                    <Input
-                                                        type="text"
-                                                        placeholder="Type DSA name"
-                                                        value={formData.customDsa}
-                                                        onChange={(e) => handleCustomInputChange(e, "customDsa")}
-                                                        className="h-8 text-xs"
-                                                        autoFocus
-                                                        disabled={!isLoggedIn}
-                                                    />
-                                                ) : (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleDsaChange("other")}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        Other
-                                                    </Button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Engineer Name Section */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label className="text-sm font-semibold">Engineer Name *</Label>
-                                        <div className="grid grid-cols-4 gap-1">
-                                            {engineers && engineers.length > 0 && engineers.map(name => (
-                                                <div key={name} className="relative group">
-                                                    <Button
-                                                        type="button"
-                                                        variant={engineerName === name ? "default" : "outline"}
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleEngineerChange(name)}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        {name}
-                                                    </Button>
-                                                    {!defaultEngineers.includes(name) && (
-                                                        <button
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label className="text-sm font-bold text-gray-900 mb-3 block">Engineer Name *</Label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                {engineers && engineers.length > 0 && engineers.map(name => (
+                                                    <div key={name} className="relative group">
+                                                        <Button
                                                             type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                deleteCustomEntry("engineers", name);
-                                                            }}
-                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            variant={engineerName === name ? "default" : "outline"}
+                                                            className={`h-10 w-full text-sm font-semibold rounded-xl transition-all ${engineerName === name
+                                                                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
+                                                                    : "border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                                }`}
+                                                            onClick={() => handleEngineerChange(name)}
                                                             disabled={!isLoggedIn}
-                                                            title="Delete this custom option"
                                                         >
-                                                            <FaTimes className="h-3 w-3" />
-                                                        </button>
+                                                            {name}
+                                                        </Button>
+                                                        {!defaultEngineers.includes(name) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteCustomEntry("engineers", name);
+                                                                }}
+                                                                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                                disabled={!isLoggedIn}
+                                                                title="Delete this custom option"
+                                                            >
+                                                                <FaTimes className="h-3 w-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <div className="relative">
+                                                    {engineerName === "other" ? (
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter engineer name"
+                                                            value={formData.customEngineerName}
+                                                            onChange={(e) => handleCustomInputChange(e, "customEngineerName")}
+                                                            className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
+                                                            autoFocus
+                                                            disabled={!isLoggedIn}
+                                                        />
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className="h-10 w-full text-sm font-semibold rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50"
+                                                            onClick={() => handleEngineerChange("other")}
+                                                            disabled={!isLoggedIn}
+                                                        >
+                                                            Other
+                                                        </Button>
                                                     )}
                                                 </div>
-                                            ))}
-                                            <div className="relative">
-                                                {engineerName === "other" ? (
-                                                    <Input
-                                                        type="text"
-                                                        placeholder="Type engineer name"
-                                                        value={formData.customEngineerName}
-                                                        onChange={(e) => handleCustomInputChange(e, "customEngineerName")}
-                                                        className="h-8 text-xs"
-                                                        autoFocus
-                                                        disabled={!isLoggedIn}
-                                                    />
-                                                ) : (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        className="text-xs h-8 w-full"
-                                                        onClick={() => handleEngineerChange("other")}
-                                                        disabled={!isLoggedIn}
-                                                    >
-                                                        Other
-                                                    </Button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Notes Section */}
-                                    <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="notes" className="text-sm font-semibold">Notes</Label>
+                                    <div className="space-y-3">
+                                        <Label htmlFor="notes" className="text-sm font-bold text-gray-900">Notes (Optional)</Label>
                                         <Textarea
                                             id="notes"
-                                            placeholder="Additional notes (optional)"
+                                            placeholder="Add any additional notes or comments here..."
                                             name="notes"
                                             value={formData.notes}
                                             onChange={handleInputChange}
-                                            className="text-sm"
-                                            rows={3}
+                                            className="text-sm rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium min-h-[120px]"
                                             disabled={!isLoggedIn}
                                         />
                                     </div>
 
-                                    {/* Submit Buttons - Fixed at bottom */}
-                                    <div className="col-span-2 flex gap-2 pt-4 border-t mt-auto">
+                                    {/* Submit Buttons */}
+                                    <div className="flex gap-3 pt-6 border-t-2 border-gray-200 mt-2">
                                         <Button
                                             type="submit"
                                             disabled={loading || !isLoggedIn}
-                                            className="flex-1 h-8 text-sm"
+                                            className="flex-1 h-12 text-base font-bold rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all"
                                         >
                                             {!isLoggedIn ? "Login to Submit" : loading ? "Submitting..." : "Submit Form"}
                                         </Button>
@@ -782,9 +814,9 @@ const FormPage = ({ user, onLogin }) => {
                                             variant="outline"
                                             onClick={() => navigate("/dashboard")}
                                             disabled={loading}
-                                            className="flex-1 h-8 text-sm"
+                                            className="flex-1 h-12 text-base font-bold rounded-xl border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                                         >
-                                            Back to Dashboard
+                                            Back
                                         </Button>
                                     </div>
                                 </form>

@@ -8,15 +8,15 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md",
+          "border-transparent bg-gradient-to-r from-[#F36E21] to-[#EC5E25] text-white hover:from-[#EC5E25] hover:to-[#D94A1E] shadow-md",
         secondary:
-          "border-transparent bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:from-slate-700 hover:to-slate-800 shadow-md",
+          "border-transparent bg-gradient-to-r from-[#7A1F14] to-[#5A1810] text-white hover:from-[#5A1810] hover:to-[#3A100A] shadow-md",
         destructive:
           "border-transparent bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 shadow-md",
-        outline: "text-slate-700 border-2 border-slate-200 bg-white hover:bg-slate-50",
+        outline: "text-[#F36E21] border-2 border-[#F36E21] bg-white hover:bg-orange-50",
         success: "border-transparent bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-md",
         warning: "border-transparent bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-700 hover:to-amber-800 shadow-md",
-        info: "border-transparent bg-gradient-to-r from-sky-600 to-sky-700 text-white hover:from-sky-700 hover:to-sky-800 shadow-md",
+        info: "border-transparent bg-gradient-to-r from-[#F36E21] to-[#EC5E25] text-white hover:from-[#EC5E25] hover:to-[#D94A1E] shadow-md",
       },
     },
     defaultVariants: {

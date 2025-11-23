@@ -99,7 +99,7 @@ const SearchBar = ({ data = [] }) => {
         const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
         return parts.map((part, index) =>
             part.toLowerCase() === highlight.toLowerCase()
-                ? <mark key={index} className="bg-yellow-200 font-semibold">{part}</mark>
+                ? <mark key={index} className="bg-[#FFC547] font-semibold text-[#3A3A3A]">{part}</mark>
                 : part
         );
     };
@@ -130,18 +130,18 @@ const SearchBar = ({ data = [] }) => {
 
             {/* Suggestions Dropdown */}
             {isOpen && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#F5E6D3] rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
                     {suggestions.map((item, index) => (
                         <button
                             key={`${item.id}-${index}`}
                             onClick={() => handleSelectSuggestion(item)}
-                            className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b last:border-b-0 transition-colors group"
+                            className="w-full px-4 py-3 text-left hover:bg-[#FFF5F0] border-b border-[#E5E7EB] last:border-b-0 transition-colors group"
                         >
                             <div className="flex flex-col gap-1">
-                                <p className="font-semibold text-slate-900 group-hover:text-blue-700">
+                                <p className="font-semibold text-[#3A3A3A] group-hover:text-[#F36E21]">
                                     {getHighlightedText(item.clientName, searchTerm)}
                                 </p>
-                                <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                                <div className="flex flex-wrap gap-2 text-xs text-[#6B7280]">
                                     {item.address && (
                                         <span className="flex items-center gap-1">
                                             📍 {getHighlightedText(item.address.substring(0, 30), searchTerm)}
@@ -153,20 +153,20 @@ const SearchBar = ({ data = [] }) => {
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
+                                <div className="flex flex-wrap gap-2 text-xs text-[#6B7280] mt-1">
                                     {item.bankName && (
-                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                        <span className="px-2 py-0.5 bg-[#FFF5F0] text-[#F36E21] rounded">
                                             {getHighlightedText(item.bankName, searchTerm)}
                                         </span>
                                     )}
                                     {item.engineerName && (
-                                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                                        <span className="px-2 py-0.5 bg-[#FFF5F0] text-[#7A1F14] rounded">
                                             {getHighlightedText(item.engineerName, searchTerm)}
                                         </span>
                                     )}
                                     <span className={`px-2 py-0.5 rounded text-white ${item.status === "approved" ? "bg-green-600" :
-                                            item.status === "pending" ? "bg-orange-600" :
-                                                item.status === "on-progress" ? "bg-blue-600" :
+                                            item.status === "pending" ? "bg-[#F36E21]" :
+                                                item.status === "on-progress" ? "bg-[#EC5E25]" :
                                                     "bg-red-600"
                                         }`}>
                                         {item.status}
@@ -180,7 +180,7 @@ const SearchBar = ({ data = [] }) => {
 
             {/* No Results Message */}
             {isOpen && searchTerm.trim().length > 0 && suggestions.length === 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-4 text-center text-sm text-slate-500">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#F5E6D3] rounded-lg shadow-lg z-50 p-4 text-center text-sm text-[#6B7280]">
                     No results found for "{searchTerm}"
                 </div>
             )}

@@ -147,7 +147,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
             // Clear any cached valuation data to ensure fresh data on mount
             invalidateCache("/valuations");
             // Show loading state during initial fetch
-            dispatch(showLoader("Loading"));
+            dispatch(showLoader("Loading Data..."));
             fetchFiles(true);
         }
     }, [dispatch]);
@@ -167,7 +167,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         try {
             if (!isInitial && showLoadingIndicator) {
                 setLoading(true);
-                dispatch(showLoader("Fetching valuations..."));
+                dispatch(showLoader("Loading Data..."));
             }
             // Invalidate cache before fetching to ensure fresh data
             invalidateCache("/valuations");
@@ -191,7 +191,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
 
     const handleLogout = async () => {
         setLoggingOut(true);
-        dispatch(showLoader("Logging out..."));
+        dispatch(showLoader("Loading Data..."));
         try {
             await logoutUser();
             if (onLogout) onLogout();
@@ -313,19 +313,19 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-orange-50">
             {/* Header */}
-            <header className="bg-gradient-to-r from-slate-800 via-slate-850 to-slate-900 text-white shadow-2xl sticky top-0 z-40 border-b-4 border-blue-600">
+            <header className="bg-gradient-to-r from-[#F36E21] to-[#EC5E25] text-white shadow-2xl sticky top-0 z-40 border-b-4 border-[#7A1F14]">
                 <div className="px-3 sm:px-6 py-3 sm:py-5 flex flex-col gap-3 sm:gap-4">
                     {/* Top Row - Logo, Search, and Controls */}
                     <div className="flex items-center justify-between gap-2 sm:gap-4">
                         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                            <div className="text-3xl sm:text-4xl flex-shrink-0 text-blue-300 drop-shadow-xl transform hover:scale-110 transition-transform duration-300">
+                            <div className="text-3xl sm:text-4xl flex-shrink-0 text-white drop-shadow-lg transform hover:scale-110 transition-transform duration-300">
                                 <FaChartBar />
                             </div>
                             <div className="min-w-0">
-                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white whitespace-nowrap">Valuation Dashboard</h1>
-                                <p className="text-xs text-blue-100 font-semibold mt-0.5 hidden sm:block">
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white whitespace-nowrap drop-shadow-md">Valuation Dashboard</h1>
+                                <p className="text-xs text-white font-semibold mt-0.5 hidden sm:block drop-shadow-sm">
                                     {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
                                 </p>
                             </div>
@@ -339,13 +339,13 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
                             {isLoggedIn && (role === "user" || role === "admin" || ["manager1", "manager2"].includes(role)) && (
                                 <>
-                                    <Button
+                                    <button
                                         onClick={() => navigate("/valuationform")}
-                                        className="bg-white text-slate-800 hover:bg-blue-50 hover:text-blue-700 hover:shadow-xl text-xs sm:text-sm px-3 sm:px-5 h-9 sm:h-10 font-bold shadow-lg transition-all duration-300 border border-blue-100"
+                                        className="bg-white text-[#F36E21] hover:bg-orange-50 hover:text-[#EC5E25] hover:shadow-xl h-9 w-9 sm:h-10 sm:w-10 shadow-lg transition-all duration-300 border-2 border-orange-100 inline-flex items-center justify-center flex-shrink-0 rounded-lg"
+                                        title="New Form"
                                     >
-                                        <FaPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
-                                        <span className="hidden sm:inline">New Form</span>
-                                    </Button>
+                                        <FaPlus className="h-5 w-5 sm:h-6 sm:w-6 text-[#F36E21]" />
+                                    </button>
 
                                     <div className="h-8 sm:h-10 w-px bg-white/30"></div>
                                 </>
@@ -354,7 +354,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                             {!isLoggedIn ? (
                                 <Button
                                     onClick={() => setLoginModalOpen(true)}
-                                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 hover:shadow-xl text-xs sm:text-sm px-3 sm:px-5 h-9 sm:h-10 flex items-center gap-2 font-bold shadow-lg transition-all duration-300 border border-blue-700"
+                                    className="bg-gradient-to-r from-[#F36E21] to-[#EC5E25] text-white hover:from-[#EC5E25] hover:to-[#D94A1E] hover:shadow-xl text-xs sm:text-sm px-3 sm:px-5 h-9 sm:h-10 flex items-center gap-2 font-bold shadow-lg transition-all duration-300 border border-[#EC5E25]"
                                     title="Login"
                                 >
                                     <FaLock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -363,7 +363,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                             ) : (
                                 <>
                                     <div className="flex items-center gap-2 sm:gap-3 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-300">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-300 to-blue-500 flex items-center justify-center flex-shrink-0 font-bold text-white shadow-lg border border-blue-200">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center flex-shrink-0 font-bold text-white shadow-lg border border-orange-200">
                                             <span className="text-xs sm:text-sm font-black">{username[0]?.toUpperCase()}</span>
                                         </div>
                                         <div className="hidden sm:block min-w-0">
@@ -395,14 +395,14 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                     <StatCard
                         title="Pending"
                         value={pendingCount}
-                        color="from-amber-500 to-amber-700"
+                        color="from-[#F36E21] to-[#EC5E25]"
                         status="pending"
                         icon={FaClock}
                     />
                     <StatCard
                         title="In Progress"
                         value={onProgressCount}
-                        color="from-blue-600 to-blue-800"
+                        color="from-[#F36E21] to-[#EC5E25]"
                         status="on-progress"
                         icon={FaSpinner}
                     />
@@ -424,29 +424,29 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
 
                 {/* Summary Stats */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-8">
-                    <Card className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-blue-500 group">
+                    <Card className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-[#F36E21] group">
                         <CardHeader className="pb-3 sm:pb-4 border-b border-slate-100">
                             <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-3 text-slate-900">
-                                <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                                    <FaChartBar className="text-blue-600 text-lg" />
+                                <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+                                    <FaChartBar className="text-[#F36E21] text-lg" />
                                 </div>
                                 Total Submissions
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4 sm:pt-6">
                             <div className="space-y-3">
-                                <p className="text-5xl sm:text-6xl font-black bg-gradient-to-r from-slate-800 to-blue-700 bg-clip-text text-transparent">{totalCount}</p>
+                                <p className="text-5xl sm:text-6xl font-black bg-gradient-to-r from-slate-800 to-[#F36E21] bg-clip-text text-transparent">{totalCount}</p>
                                 <p className="text-xs sm:text-sm text-slate-600 font-semibold">Forms submitted in total</p>
-                                <div className="h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full w-12 group-hover:w-20 transition-all duration-300"></div>
+                                <div className="h-1 bg-gradient-to-r from-[#F36E21] to-[#EC5E25] rounded-full w-12 group-hover:w-20 transition-all duration-300"></div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-emerald-500 group">
+                    <Card className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-green-500 group">
                         <CardHeader className="pb-3 sm:pb-4 border-b border-slate-100">
                             <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-3 text-slate-900">
-                                <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
-                                    <FaCheckCircle className="text-emerald-600 text-lg" />
+                                <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                                    <FaCheckCircle className="text-green-600 text-lg" />
                                 </div>
                                 Completion Rate
                             </CardTitle>
@@ -457,27 +457,27 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                     <div className="flex-1">
                                         <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden shadow-sm border border-slate-300">
                                             <div
-                                                className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-500 rounded-full shadow-md"
+                                                className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500 rounded-full shadow-md"
                                                 style={{ width: `${completionRate}%` }}
                                             ></div>
                                         </div>
                                     </div>
-                                    <p className="text-4xl sm:text-5xl font-black text-emerald-600 min-w-max">{completionRate}%</p>
+                                    <p className="text-4xl sm:text-5xl font-black text-green-600 min-w-max">{completionRate}%</p>
                                 </div>
                                 <p className="text-xs sm:text-sm text-slate-600 font-semibold">{approvedCount + rejectedCount} of {totalCount} completed</p>
-                                <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full w-12 group-hover:w-20 transition-all duration-300"></div>
+                                <div className="h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full w-12 group-hover:w-20 transition-all duration-300"></div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
                 {/* Data Table */}
-                <Card className="overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 border-t-blue-600">
-                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-gradient-to-r from-blue-50 via-white to-slate-50 border-b-2 border-blue-200 py-5 sm:py-6">
+                <Card className="overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 border-t-[#F36E21]">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-gradient-to-r from-orange-50 via-white to-slate-50 border-b-2 border-orange-200 py-5 sm:py-6">
                         <div>
                             <CardTitle className="text-lg sm:text-xl font-black flex items-center gap-3 text-slate-900">
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                    <FaEye className="text-blue-600 text-lg" />
+                                <div className="p-2 bg-orange-100 rounded-lg">
+                                    <FaEye className="text-[#F36E21] text-lg" />
                                 </div>
                                 Valuation Forms
                             </CardTitle>
@@ -494,7 +494,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                         setBankFilter(null);
                                         setEngineerFilter(null);
                                     }}
-                                    className="text-xs sm:text-sm px-3 sm:px-4 font-bold border-2 border-slate-300 hover:border-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-300 shadow-sm hover:shadow-md"
+                                    className="text-xs sm:text-sm px-3 sm:px-4 font-bold border-2 border-orange-300 hover:border-orange-500 hover:bg-orange-50 hover:text-[#F36E21] transition-all duration-300 shadow-sm hover:shadow-md"
                                 >
                                     Clear Filters
                                 </Button>

@@ -70,26 +70,32 @@ export const getValuationById = async (req, res) => {
             return res.status(403).json({ success: false, message: "Forbidden - You can only view your own records" });
         }
 
-        // MANAGER & ADMIN: Can only see user valuations with role-based filtering
+        // MANAGER & ADMIN: Can see user valuations with role-based filtering + their own records
         if (requestUser.role !== "admin") {
-            // Non-admin managers must check if it's a user record
-            if (!form.username.toLowerCase().startsWith("user")) {
+            // Check if it's manager's own record - allow viewing their own profile
+            const isOwnRecord = form.username === requestUser.username;
+            
+            // Non-admin managers must check if it's a user record OR their own record
+            if (!form.username.toLowerCase().startsWith("user") && !isOwnRecord) {
                 return res.status(403).json({ success: false, message: "Forbidden - You can only view user records" });
             }
             
-            // manager1: Can only see user1, user2, user3, user4, user5
-            if (requestUser.role === "manager1") {
-                const allowedUsers = ["user1", "user2", "user3", "user4", "user5"];
-                if (!allowedUsers.includes(form.username.toLowerCase())) {
-                    return res.status(403).json({ success: false, message: "Forbidden - You can only view user1 to user5 records" });
+            // Only apply user restrictions if viewing a user record (not own record)
+            if (!isOwnRecord) {
+                // manager1: Can only see user1, user2, user3, user4, user5
+                if (requestUser.role === "manager1") {
+                    const allowedUsers = ["user1", "user2", "user3", "user4", "user5"];
+                    if (!allowedUsers.includes(form.username.toLowerCase())) {
+                        return res.status(403).json({ success: false, message: "Forbidden - You can only view user1 to user5 records" });
+                    }
                 }
-            }
-            
-            // manager2: Can only see user6 and onwards (not user1-user5)
-            if (requestUser.role === "manager2") {
-                const restrictedUsers = ["user1", "user2", "user3", "user4", "user5"];
-                if (restrictedUsers.includes(form.username.toLowerCase())) {
-                    return res.status(403).json({ success: false, message: "Forbidden - You can only view user6 and other user records" });
+                
+                // manager2: Can only see user6 and onwards (not user1-user5)
+                if (requestUser.role === "manager2") {
+                    const restrictedUsers = ["user1", "user2", "user3", "user4", "user5"];
+                    if (restrictedUsers.includes(form.username.toLowerCase())) {
+                        return res.status(403).json({ success: false, message: "Forbidden - You can only view user6 and other user records" });
+                    }
                 }
             }
         }

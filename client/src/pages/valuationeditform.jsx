@@ -42,6 +42,39 @@ const EditValuationPage = ({ user, onLogin }) => {
     const [modalAction, setModalAction] = useState(null);
     const [modalFeedback, setModalFeedback] = useState("");
     const [formData, setFormData] = useState({
+        // BASIC INFO
+        uniqueId: '',
+        username: '',
+        dateTime: '',
+        day: '',
+
+        // BANK & CITY
+        bankName: '',
+        city: '',
+
+        // CLIENT DETAILS
+        clientName: '',
+        mobileNumber: '',
+        address: '',
+
+        // PAYMENT
+        payment: '',
+        collectedBy: '',
+
+        // DSA
+        dsa: '',
+        customDsa: '',
+
+        // ENGINEER
+        engineerName: '',
+        customEngineerName: '',
+
+        // NOTES
+        notes: '',
+
+        // PROPERTY BASIC DETAILS
+        elevation: '',
+        // DIRECTIONS
         directions: {
             north1: '',
             east1: '',
@@ -52,22 +85,190 @@ const EditValuationPage = ({ user, onLogin }) => {
             south2: '',
             west2: ''
         },
-        propertyImages: [],
-        locationImages: [],
+
+        // COORDINATES
         coordinates: {
             latitude: '',
             longitude: ''
         },
-        clientName: '',
-        mobileNumber: '',
-        address: '',
-        payment: '',
-        collectedBy: '',
-        dsa: '',
-        customDsa: '',
-        engineerName: '',
-        customEngineerName: '',
-        notes: '',
+
+        // IMAGES
+        propertyImages: [],
+        locationImages: [],
+        photos: {
+            elevationImages: [],
+            siteImages: []
+        },
+
+        // STATUS
+        status: 'pending',
+        managerFeedback: '',
+        submittedByManager: false,
+        lastUpdatedBy: '',
+        lastUpdatedByRole: '',
+
+        // PDF DETAILS (AUTO-EXTRACTED)
+        pdfDetails: {
+            formId: '',
+            branch: '',
+            valuationPurpose: '',
+            inspectionDate: '',
+            valuationMadeDate: '',
+
+            mortgageDeed: '',
+            mortgageDeedBetween: '',
+            previousValuationReport: '',
+            previousValuationInFavorOf: '',
+            approvedPlanNo: '',
+
+            ownerName: '',
+
+            // PROPERTY DESCRIPTION
+            plotSurveyBlockNo: '',
+            doorShopNo: '',
+            tpVillage: '',
+            wardTaluka: '',
+            mandalDistrict: '',
+            layoutPlanIssueDate: '',
+            approvedMapAuthority: '',
+            authenticityVerified: '',
+            valuerCommentOnAuthenticity: '',
+
+            postalAddress: '',
+            cityTown: '',
+            residentialArea: '',
+            commercialArea: '',
+            industrialArea: '',
+            locationOfProperty: '',
+
+            // AREA DETAILS
+            classificationArea: '',
+            urbanType: '',
+            underCorporation: '',
+            govtEnactmentCover: '',
+
+            boundariesDocument: {
+                east: '',
+                west: '',
+                north: '',
+                south: ''
+            },
+            boundariesActual: {
+                east: '',
+                west: '',
+                north: '',
+                south: ''
+            },
+
+            builtUpArea: '',
+            carpetArea: '',
+            udsLand: '',
+
+            latitudeLongitude: '',
+            siteConsideredArea: '',
+            occupancyStatus: '',
+
+            // APARTMENT DETAILS
+            apartmentNature: '',
+            apartmentLocation: '',
+            surveyBlockNo: '',
+            tpFpNo: '',
+            villageMunicipality: '',
+            doorStreet: '',
+            localityDescription: '',
+            constructionYear: '',
+            numberOfFloors: '',
+            structureType: '',
+            dwellingUnits: '',
+            qualityOfConstruction: '',
+            buildingAppearance: '',
+            buildingMaintenance: '',
+
+            facilities: {
+                lift: false,
+                waterSupply: false,
+                sewerage: false,
+                parking: false,
+                compoundWall: false,
+                pavement: false
+            },
+
+            flatFloor: '',
+            flatDoorNo: '',
+            flatSpecifications: {
+                specifications: '',
+                roof: '',
+                flooring: '',
+                doors: '',
+                windows: '',
+                fittings: '',
+                finishing: ''
+            },
+
+            houseTax: {
+                assessmentNo: '',
+                taxPaidBy: '',
+                taxAmount: ''
+            },
+            electricityConnection: {
+                connectionNo: '',
+                meterName: ''
+            },
+
+            flatMaintenance: '',
+            saleDeedName: '',
+            undividedLandArea: '',
+            plinthArea: '',
+            fsi: '',
+            carpetAreaValuation: '',
+            flatClass: '',
+            usage: '',
+            occupancy: '',
+            rent: '',
+
+            // MARKET VALUE ANALYSIS
+            marketability: '',
+            positiveFactors: '',
+            negativeFactors: '',
+            compositeRate: '',
+
+            jantriRate: '',
+            basicCompositeRate: '',
+            buildingServiceRate: '',
+            landOtherRate: '',
+
+            depreciatedBuildingRate: '',
+            replacementCost: '',
+            buildingAge: '',
+            buildingLife: '',
+            depreciationPercentage: '',
+            depreciatedRatio: '',
+
+            finalCompositeRate: '',
+            presentValue: '',
+            furnitureFixtureValue: '',
+            totalValue: '',
+
+            fairMarketValue: '',
+            realizableValue: '',
+            distressValue: '',
+            saleDeedValue: '',
+            insurableValue: '',
+            totalJantriValue: '',
+
+            // FLAT SPECIFICATIONS EXTENDED
+            areaUsage: '',
+            carpetAreaFlat: '',
+            
+            // SIGNATURE & REPORT DETAILS
+            place: '',
+            signatureDate: '',
+            signerName: '',
+            reportDate: '',
+            fairMarketValueWords: ''
+        },
+
+        // CUSTOM FIELDS FOR DROPDOWN HANDLING
         customBankName: '',
         customCity: ''
     });
@@ -247,6 +448,26 @@ const EditValuationPage = ({ user, onLogin }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleLettersOnlyInputChange = (e, callback) => {
+        const { name, value } = e.target;
+        const lettersOnly = value.replace(/[^a-zA-Z\s]/g, '');
+        if (callback) {
+            callback(lettersOnly);
+        } else {
+            setFormData(prev => ({ ...prev, [name]: lettersOnly }));
+        }
+    };
+
+    const handleIntegerInputChange = (e, callback) => {
+        const { name, value } = e.target;
+        const numbersOnly = value.replace(/[^0-9]/g, '');
+        if (callback) {
+            callback(numbersOnly);
+        } else {
+            setFormData(prev => ({ ...prev, [name]: numbersOnly }));
+        }
+    };
+
     const handleDirectionChange = (direction, value) => {
         setFormData(prev => ({
             ...prev,
@@ -381,20 +602,24 @@ const EditValuationPage = ({ user, onLogin }) => {
             errors.push("City is required");
         }
 
-        // === DSA ===
+        // === MARKET APPLICATIONS / DSA (Sales Agent) ===
         const finalDsa = formData.dsa === "other" ? formData.customDsa : formData.dsa;
         if (!finalDsa || !finalDsa.trim()) {
-            errors.push("DSA (Sales Agent) is required");
+            errors.push("Market Applications / DSA (Sales Agent) is required");
         }
 
-
+        // === ENGINEER NAME ===
+        const finalEngineerName = formData.engineerName === "other" ? formData.customEngineerName : formData.engineerName;
+        if (!finalEngineerName || !finalEngineerName.trim()) {
+            errors.push("Engineer Name is required");
+        }
 
         // === PAYMENT INFORMATION ===
         if (formData.payment === "yes" && (!formData.collectedBy || !formData.collectedBy.trim())) {
             errors.push("Collected By name is required when payment is collected");
         }
 
-        // === GPS COORDINATES ===
+        // === GPS COORDINATES VALIDATION ===
         if (formData.coordinates.latitude || formData.coordinates.longitude) {
             if (formData.coordinates.latitude) {
                 const lat = parseFloat(formData.coordinates.latitude);
@@ -411,15 +636,21 @@ const EditValuationPage = ({ user, onLogin }) => {
             }
         }
 
-        // === PROPERTY IMAGES ===
+        // === PROPERTY IMAGES VALIDATION ===
         if (imagePreviews.length === 0) {
-            errors.push("property image is required");
+            errors.push("Property image is required");
         }
 
-        // === LOCATION IMAGES ===
+        // === LOCATION IMAGES VALIDATION ===
         if (locationImagePreviews.length === 0) {
-            errors.push("location image is required");
+            errors.push("Location image is required");
         }
+
+        return errors;
+    };
+
+    const validatePdfDetails = () => {
+        const errors = [];
 
         return errors;
     };
@@ -438,9 +669,11 @@ const EditValuationPage = ({ user, onLogin }) => {
 
         // Validate form
         const validationErrors = validateForm();
-        if (validationErrors.length > 0) {
+        const pdfDetailsErrors = validatePdfDetails();
+        const allErrors = [...validationErrors, ...pdfDetailsErrors];
+        if (allErrors.length > 0) {
             // Show single consolidated error instead of multiple notifications
-            showError(` ${validationErrors.join(", ")}`);
+            showError(` ${allErrors.join(", ")}`);
             return;
         }
 
@@ -448,21 +681,212 @@ const EditValuationPage = ({ user, onLogin }) => {
             setLoading(true);
             dispatch(showLoader("Loading Data..."));
 
-            // Build regular JSON payload with trimmed custom values
+            // Build complete payload with all form data including pdfDetails
             const payload = {
-                ...formData,
+                // Basic Info
+                dateTime: formData.dateTime,
+                day: formData.day,
+
+                // Bank & City
                 bankName: bankName === "other" ? (formData.customBankName || "").trim() : bankName,
                 city: city === "other" ? (formData.customCity || "").trim() : city,
+
+                // Client Details
+                clientName: formData.clientName,
+                mobileNumber: formData.mobileNumber,
+                address: formData.address,
+
+                // Payment
+                payment: formData.payment,
+                collectedBy: formData.collectedBy,
+
+                // DSA & Engineer
                 dsa: formData.dsa === "other" ? (formData.customDsa || "").trim() : formData.dsa,
                 engineerName: formData.engineerName === "other" ? (formData.customEngineerName || "").trim() : formData.engineerName,
-            };
 
-            // Remove immutable/system fields
-            delete payload._id;
-            delete payload.__v;
-            delete payload.uniqueId;
-            delete payload.createdAt;
-            delete payload.username;
+                // Notes
+                notes: formData.notes,
+
+                // Property Basic Details
+                elevation: formData.elevation,
+                longLat: formData.longLat,
+
+                // Directions
+                directions: formData.directions,
+
+                // Coordinates
+                coordinates: formData.coordinates,
+
+                // Status fields
+                status: formData.status || "pending",
+                managerFeedback: formData.managerFeedback,
+                submittedByManager: formData.submittedByManager,
+
+                // Complete PDF Details with all sub-fields
+                pdfDetails: {
+                    formId: formData.pdfDetails?.formId || "",
+                    branch: formData.pdfDetails?.branch || "",
+                    valuationPurpose: formData.pdfDetails?.valuationPurpose || "",
+                    inspectionDate: formData.pdfDetails?.inspectionDate || "",
+                    valuationMadeDate: formData.pdfDetails?.valuationMadeDate || "",
+                    mortgageDeed: formData.pdfDetails?.mortgageDeed || "",
+                    mortgageDeedBetween: formData.pdfDetails?.mortgageDeedBetween || "",
+                    previousValuationReport: formData.pdfDetails?.previousValuationReport || "",
+                    previousValuationInFavorOf: formData.pdfDetails?.previousValuationInFavorOf || "",
+                    approvedPlanNo: formData.pdfDetails?.approvedPlanNo || "",
+                    ownerName: formData.pdfDetails?.ownerName || "",
+
+                    // Property Description
+                    plotSurveyBlockNo: formData.pdfDetails?.plotSurveyBlockNo || "",
+                    doorShopNo: formData.pdfDetails?.doorShopNo || "",
+                    tpVillage: formData.pdfDetails?.tpVillage || "",
+                    wardTaluka: formData.pdfDetails?.wardTaluka || "",
+                    mandalDistrict: formData.pdfDetails?.mandalDistrict || "",
+                    layoutPlanIssueDate: formData.pdfDetails?.layoutPlanIssueDate || "",
+                    approvedMapAuthority: formData.pdfDetails?.approvedMapAuthority || "",
+                    authenticityVerified: formData.pdfDetails?.authenticityVerified || "",
+                    valuerCommentOnAuthenticity: formData.pdfDetails?.valuerCommentOnAuthenticity || "",
+
+                    // Location Details
+                    postalAddress: formData.pdfDetails?.postalAddress || "",
+                    cityTown: formData.pdfDetails?.cityTown || "",
+                    residentialArea: formData.pdfDetails?.residentialArea || "",
+                    commercialArea: formData.pdfDetails?.commercialArea || "",
+                    industrialArea: formData.pdfDetails?.industrialArea || "",
+                    locationOfProperty: formData.pdfDetails?.locationOfProperty || "",
+
+                    // Area Classification
+                    classificationArea: formData.pdfDetails?.classificationArea || "",
+                    urbanType: formData.pdfDetails?.urbanType || "",
+                    underCorporation: formData.pdfDetails?.underCorporation || "",
+                    govtEnactmentCover: formData.pdfDetails?.govtEnactmentCover || "",
+
+                    // Boundaries
+                    boundariesDocument: formData.pdfDetails?.boundariesDocument || {
+                        east: "",
+                        west: "",
+                        north: "",
+                        south: ""
+                    },
+                    boundariesActual: formData.pdfDetails?.boundariesActual || {
+                        east: "",
+                        west: "",
+                        north: "",
+                        south: ""
+                    },
+
+                    // Area Details
+                    builtUpArea: formData.pdfDetails?.builtUpArea || "",
+                    carpetArea: formData.pdfDetails?.carpetArea || "",
+                    udsLand: formData.pdfDetails?.udsLand || "",
+                    latitudeLongitude: formData.pdfDetails?.latitudeLongitude || "",
+                    siteConsideredArea: formData.pdfDetails?.siteConsideredArea || "",
+                    occupancyStatus: formData.pdfDetails?.occupancyStatus || "",
+
+                    // Apartment Details
+                    apartmentNature: formData.pdfDetails?.apartmentNature || "",
+                    apartmentLocation: formData.pdfDetails?.apartmentLocation || "",
+                    surveyBlockNo: formData.pdfDetails?.surveyBlockNo || "",
+                    tpFpNo: formData.pdfDetails?.tpFpNo || "",
+                    villageMunicipality: formData.pdfDetails?.villageMunicipality || "",
+                    doorStreet: formData.pdfDetails?.doorStreet || "",
+                    localityDescription: formData.pdfDetails?.localityDescription || "",
+                    constructionYear: formData.pdfDetails?.constructionYear || "",
+                    numberOfFloors: formData.pdfDetails?.numberOfFloors || "",
+                    structureType: formData.pdfDetails?.structureType || "",
+                    dwellingUnits: formData.pdfDetails?.dwellingUnits || "",
+                    qualityOfConstruction: formData.pdfDetails?.qualityOfConstruction || "",
+                    buildingAppearance: formData.pdfDetails?.buildingAppearance || "",
+                    buildingMaintenance: formData.pdfDetails?.buildingMaintenance || "",
+
+                    // Facilities
+                    facilities: formData.pdfDetails?.facilities || {
+                        lift: false,
+                        waterSupply: false,
+                        sewerage: false,
+                        parking: false,
+                        compoundWall: false,
+                        pavement: false
+                    },
+
+                    // Flat Details
+                    flatFloor: formData.pdfDetails?.flatFloor || "",
+                    flatDoorNo: formData.pdfDetails?.flatDoorNo || "",
+                    flatSpecifications: formData.pdfDetails?.flatSpecifications || {
+                        specifications: "",
+                        roof: "",
+                        flooring: "",
+                        doors: "",
+                        windows: "",
+                        fittings: "",
+                        finishing: ""
+                    },
+
+                    // House Tax & Electricity
+                    houseTax: formData.pdfDetails?.houseTax || {
+                        assessmentNo: "",
+                        taxPaidBy: "",
+                        taxAmount: ""
+                    },
+                    electricityConnection: formData.pdfDetails?.electricityConnection || {
+                        connectionNo: "",
+                        meterName: ""
+                    },
+
+                    // Additional Property Details
+                    flatMaintenance: formData.pdfDetails?.flatMaintenance || "",
+                    saleDeedName: formData.pdfDetails?.saleDeedName || "",
+                    undividedLandArea: formData.pdfDetails?.undividedLandArea || "",
+                    plinthArea: formData.pdfDetails?.plinthArea || "",
+                    fsi: formData.pdfDetails?.fsi || "",
+                    carpetAreaValuation: formData.pdfDetails?.carpetAreaValuation || "",
+                    flatClass: formData.pdfDetails?.flatClass || "",
+                    usage: formData.pdfDetails?.usage || "",
+                    occupancy: formData.pdfDetails?.occupancy || "",
+                    rent: formData.pdfDetails?.rent || "",
+
+                    // Market Value Analysis - Rates & Factors
+                    marketability: formData.pdfDetails?.marketability || "",
+                    positiveFactors: formData.pdfDetails?.positiveFactors || "",
+                    negativeFactors: formData.pdfDetails?.negativeFactors || "",
+                    compositeRate: formData.pdfDetails?.compositeRate || "",
+                    jantriRate: formData.pdfDetails?.jantriRate || "",
+                    basicCompositeRate: formData.pdfDetails?.basicCompositeRate || "",
+                    buildingServiceRate: formData.pdfDetails?.buildingServiceRate || "",
+                    landOtherRate: formData.pdfDetails?.landOtherRate || "",
+
+                    // Depreciation & Building Analysis
+                    depreciatedBuildingRate: formData.pdfDetails?.depreciatedBuildingRate || "",
+                    replacementCost: formData.pdfDetails?.replacementCost || "",
+                    buildingAge: formData.pdfDetails?.buildingAge || "",
+                    buildingLife: formData.pdfDetails?.buildingLife || "",
+                    depreciationPercentage: formData.pdfDetails?.depreciationPercentage || "",
+                    depreciatedRatio: formData.pdfDetails?.depreciatedRatio || "",
+                    finalCompositeRate: formData.pdfDetails?.finalCompositeRate || "",
+                    presentValue: formData.pdfDetails?.presentValue || "",
+                    furnitureFixtureValue: formData.pdfDetails?.furnitureFixtureValue || "",
+                    totalValue: formData.pdfDetails?.totalValue || "",
+
+                    // Valuation Results
+                    fairMarketValue: formData.pdfDetails?.fairMarketValue || "",
+                    realizableValue: formData.pdfDetails?.realizableValue || "",
+                    distressValue: formData.pdfDetails?.distressValue || "",
+                    saleDeedValue: formData.pdfDetails?.saleDeedValue || "",
+                    insurableValue: formData.pdfDetails?.insurableValue || "",
+                    totalJantriValue: formData.pdfDetails?.totalJantriValue || "",
+
+                    // Flat Specifications Extended
+                    areaUsage: formData.pdfDetails?.areaUsage || "",
+                    carpetAreaFlat: formData.pdfDetails?.carpetAreaFlat || "",
+
+                    // Signature & Report Details
+                    place: formData.pdfDetails?.place || "",
+                    signatureDate: formData.pdfDetails?.signatureDate || "",
+                    signerName: formData.pdfDetails?.signerName || "",
+                    reportDate: formData.pdfDetails?.reportDate || "",
+                    fairMarketValueWords: formData.pdfDetails?.fairMarketValueWords || ""
+                }
+            };
 
             // Parallel image uploads
             const [uploadedPropertyImages, uploadedLocationImages] = await Promise.all([
@@ -507,24 +931,28 @@ const EditValuationPage = ({ user, onLogin }) => {
             // Clear draft before API call
             localStorage.removeItem(`valuation_draft_${username}`);
 
-            // Call API to update valuation with JSON payload
+            // Debug: Log payload to verify pdfDetails is included
+            console.log("ONFINISH - Sending payload with pdfDetails:", payload.pdfDetails ? "YES" : "NO");
+            console.log("ONFINISH - pdfDetails keys count:", payload.pdfDetails ? Object.keys(payload.pdfDetails).length : 0);
+
+            // Call API to update valuation with complete JSON payload
             const apiResponse = await updateValuation(id, payload);
 
             // Invalidate cache to ensure fresh data on dashboard
             invalidateCache("/valuations");
 
-            // Status always updates to on-progress for admin/managers on save
-            let newStatus = "on-progress";
+            // Get the actual status from API response (server determines correct status)
+            const newStatus = apiResponse?.status || payload.status || "on-progress";
 
-            // Update local state with API response and new status
+            // Update local state with API response and actual server status
             const updatedValuation = {
                 ...valuation,
                 ...(apiResponse || {}),
                 ...payload,
                 status: newStatus,
-                lastUpdatedBy: username,
-                lastUpdatedByRole: role,
-                lastUpdatedAt: new Date().toISOString()
+                lastUpdatedBy: apiResponse?.lastUpdatedBy || username,
+                lastUpdatedByRole: apiResponse?.lastUpdatedByRole || role,
+                lastUpdatedAt: apiResponse?.lastUpdatedAt || new Date().toISOString()
             };
 
             // Update component state
@@ -568,9 +996,16 @@ const EditValuationPage = ({ user, onLogin }) => {
         const statusValue = modalAction === "approve" ? "approved" : "rejected";
         const actionLabel = modalAction === "approve" ? "Approve" : "Reject";
 
-        if (statusValue === "rejected" && !modalFeedback.trim()) {
-            showError("Please provide feedback for rejection");
-            return;
+        // Validate rejection feedback
+        if (statusValue === "rejected") {
+            if (!modalFeedback || !modalFeedback.trim()) {
+                showError("Rejection feedback is required. Please provide detailed feedback for rejection");
+                return;
+            }
+            if (modalFeedback.trim().length < 10) {
+                showError("Rejection feedback must be at least 10 characters long");
+                return;
+            }
         }
 
         try {
@@ -614,7 +1049,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                     <CardContent className="pt-6">
                         <div className="text-center space-y-4">
                             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                            <p className="text-muted-foreground">Loading</p>
+                            <p className="text-muted-foreground"></p>
                         </div>
                     </CardContent>
                 </Card>
@@ -633,9 +1068,11 @@ const EditValuationPage = ({ user, onLogin }) => {
     };
 
     // Permission checks
-    const canEdit = isLoggedIn && ((role === "admin") ||
-        (role === "manager1" || role === "manager2") && (valuation.status === "pending" || valuation.status === "rejected" || valuation.status === "on-progress") ||
-        (role === "user") && (valuation.status === "rejected" || valuation.status === "pending"));
+    const canEdit = isLoggedIn && (
+        (role === "admin") ||
+        ((role === "manager1" || role === "manager2") && (valuation.status === "pending" || valuation.status === "rejected" || valuation.status === "on-progress")) ||
+        ((role === "user") && (valuation.status === "rejected" || valuation.status === "pending"))
+    );
 
     const canApprove = isLoggedIn && (role === "manager1" || role === "manager2" || role === "admin") &&
         (valuation.status === "pending" || valuation.status === "on-progress" || valuation.status === "rejected");
@@ -781,7 +1218,11 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 placeholder="10-digit number"
                                                 name="mobileNumber"
                                                 value={formData.mobileNumber || ""}
-                                                onChange={handleInputChange}
+                                                onChange={(e) => {
+                                                    handleIntegerInputChange(e, (value) => {
+                                                        setFormData(prev => ({ ...prev, mobileNumber: value }));
+                                                    });
+                                                }}
                                                 maxLength={10}
                                                 inputMode="numeric"
                                                 disabled={!canEditField("mobileNumber")}
@@ -828,8 +1269,9 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                         <Input
                                                             type="text"
                                                             placeholder="Enter bank name"
+                                                            name="customBankName"
                                                             value={formData.customBankName}
-                                                            onChange={(e) => setFormData(prev => ({ ...prev, customBankName: e.target.value }))}
+                                                            onChange={handleInputChange}
                                                             className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
                                                             autoFocus
                                                             disabled={!canEditField("bankName")}
@@ -875,8 +1317,9 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                         <Input
                                                             type="text"
                                                             placeholder="Enter city name"
+                                                            name="customCity"
                                                             value={formData.customCity}
-                                                            onChange={(e) => setFormData(prev => ({ ...prev, customCity: e.target.value }))}
+                                                            onChange={handleInputChange}
                                                             className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
                                                             autoFocus
                                                             disabled={!canEditField("city")}
@@ -922,8 +1365,9 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                         <Input
                                                             type="text"
                                                             placeholder="Enter DSA name"
+                                                            name="customDsa"
                                                             value={formData.customDsa}
-                                                            onChange={(e) => setFormData(prev => ({ ...prev, customDsa: e.target.value }))}
+                                                            onChange={handleInputChange}
                                                             className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
                                                             autoFocus
                                                             disabled={!canEditField("dsa")}
@@ -969,8 +1413,9 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                         <Input
                                                             type="text"
                                                             placeholder="Enter engineer name"
+                                                            name="customEngineerName"
                                                             value={formData.customEngineerName}
-                                                            onChange={(e) => setFormData(prev => ({ ...prev, customEngineerName: e.target.value }))}
+                                                            onChange={handleInputChange}
                                                             className="h-10 text-sm rounded-xl border-2 border-orange-300 bg-orange-50 focus:border-orange-500 focus:ring-orange-200"
                                                             autoFocus
                                                             disabled={!canEditField("engineerName")}
@@ -1025,6 +1470,32 @@ const EditValuationPage = ({ user, onLogin }) => {
 
                                     <div className="border-t-2 border-gray-200"></div>
 
+                                    {/* Property Basic Details Section */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                                <FaBuilding className="h-5 w-5 text-orange-600" />
+                                                Property Basic Details
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="elevation" className="text-sm font-bold text-gray-900">Elevation</Label>
+                                                    <Input
+                                                        id="elevation"
+                                                        placeholder="Enter elevation details"
+                                                        name="elevation"
+                                                        value={formData.elevation || ""}
+                                                        onChange={handleInputChange}
+                                                        disabled={!canEdit}
+                                                        className="h-11 text-sm rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
                                     {/* Notes Section */}
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -1041,107 +1512,6 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 rows={4}
                                                 className="rounded-xl border-2 border-orange-300 focus:border-orange-500 focus:ring-orange-200 font-medium"
                                             />
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t-2 border-gray-200"></div>
-
-                                    {/* Property Directions Section */}
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                            <FaCompass className="h-5 w-5 text-orange-600" />
-                                            Property Directions
-                                        </h3>
-                                        <p className="text-sm text-gray-600 mb-4">Enter property directions as per sale deed and site visit</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                                            {/* AS PER SALE DEED Card */}
-                                            <Card className="border-2 border-red-200 rounded-2xl">
-                                                <CardHeader className="bg-red-50 border-b-2 border-red-200 p-4">
-                                                    <CardTitle className="text-center text-red-700 font-bold">AS PER SALE DEED</CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="p-6">
-                                                    <div className="compass-layout space-y-4">
-                                                        <Input
-                                                            placeholder="North"
-                                                            value={formData.directions.north1}
-                                                            onChange={(e) => handleDirectionChange('north1', e.target.value)}
-                                                            className="text-center text-lg font-bold h-11 rounded-xl border-2 border-red-200 focus:border-red-500 focus:ring-red-200"
-                                                            disabled={!canEdit}
-                                                        />
-                                                        <div className="flex gap-4 items-center justify-center">
-                                                            <Input
-                                                                placeholder="West"
-                                                                value={formData.directions.west1}
-                                                                onChange={(e) => handleDirectionChange('west1', e.target.value)}
-                                                                className="text-center text-lg font-medium"
-                                                                disabled={!canEdit}
-                                                            />
-                                                            <Card className="w-16 h-16 shadow-lg rounded-full flex items-center justify-center border">
-                                                                <FaCompass className="h-8 w-8" />
-                                                            </Card>
-                                                            <Input
-                                                                placeholder="East"
-                                                                value={formData.directions.east1}
-                                                                onChange={(e) => handleDirectionChange('east1', e.target.value)}
-                                                                className="text-center text-lg font-medium"
-                                                                disabled={!canEdit}
-                                                            />
-                                                        </div>
-                                                        <Input
-                                                            placeholder="South"
-                                                            value={formData.directions.south1}
-                                                            onChange={(e) => handleDirectionChange('south1', e.target.value)}
-                                                            className="text-center text-lg font-medium"
-                                                            disabled={!canEdit}
-                                                        />
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* AS PER SITE Card */}
-                                            <Card className="border">
-                                                <CardHeader className="border-b">
-                                                    <CardTitle className="text-center">AS PER SITE</CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="p-6">
-                                                    <div className="compass-layout space-y-4">
-                                                        <Input
-                                                            placeholder="North"
-                                                            value={formData.directions.north2}
-                                                            onChange={(e) => handleDirectionChange('north2', e.target.value)}
-                                                            className="text-center text-lg font-medium"
-                                                            disabled={!canEdit}
-                                                        />
-                                                        <div className="flex gap-4 items-center justify-center">
-                                                            <Input
-                                                                placeholder="West"
-                                                                value={formData.directions.west2}
-                                                                onChange={(e) => handleDirectionChange('west2', e.target.value)}
-                                                                className="text-center text-lg font-medium"
-                                                                disabled={!canEdit}
-                                                            />
-                                                            <Card className="w-16 h-16 shadow-lg rounded-full flex items-center justify-center border">
-                                                                <FaCompass className="h-8 w-8" />
-                                                            </Card>
-                                                            <Input
-                                                                placeholder="East"
-                                                                value={formData.directions.east2}
-                                                                onChange={(e) => handleDirectionChange('east2', e.target.value)}
-                                                                className="text-center text-lg font-medium"
-                                                                disabled={!canEdit}
-                                                            />
-                                                        </div>
-                                                        <Input
-                                                            placeholder="South"
-                                                            value={formData.directions.south2}
-                                                            onChange={(e) => handleDirectionChange('south2', e.target.value)}
-                                                            className="text-center text-lg font-medium"
-                                                            disabled={!canEdit}
-                                                        />
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
                                         </div>
                                     </div>
 
@@ -1332,10 +1702,1355 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 </Card>
                                             )}
                                         </div>
+                                    </div>
+
+                                    <div className="border-t-2 border-gray-200"></div>
+
+                                    {/* PDF Details Section */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <FaFileAlt className="h-5 w-5 text-orange-600" />
+                                            PDF Details
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mb-6">Property valuation details</p>
+
+                                        {/* Basic Document Info */}
+                                        <div className="mb-6 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Document Information</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Branch</Label>
+                                                    <Input
+                                                        placeholder="Branch"
+                                                        value={formData.pdfDetails?.branch || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, branch: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-blue-200 focus:border-blue-500 focus:ring-blue-200"
+                                                    />
+                                                </div>
+
+                                            </div>
                                         </div>
 
-                                        {/* Action Buttons */}
-                                        <div className="border-t-2 border-gray-200 pt-6 mt-6">
+                                        {/* Document References */}
+                                        <div className="mb-6 p-6 bg-yellow-50 rounded-2xl border border-yellow-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Document References</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Mortgage Deed</Label>
+                                                    <Input
+                                                        placeholder="Mortgage deed"
+                                                        value={formData.pdfDetails?.mortgageDeed || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, mortgageDeed: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-yellow-200 focus:border-yellow-500 focus:ring-yellow-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Mortgage Deed Between</Label>
+                                                    <Input
+                                                        placeholder="Mortgage deed between"
+                                                        value={formData.pdfDetails?.mortgageDeedBetween || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, mortgageDeedBetween: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-yellow-200 focus:border-yellow-500 focus:ring-yellow-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Previous Valuation Report</Label>
+                                                    <Input
+                                                        placeholder="Previous valuation report"
+                                                        value={formData.pdfDetails?.previousValuationReport || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, previousValuationReport: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-yellow-200 focus:border-yellow-500 focus:ring-yellow-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Previous Valuation in Favor Of</Label>
+                                                    <Input
+                                                        placeholder="Previous valuation in favor of"
+                                                        value={formData.pdfDetails?.previousValuationInFavorOf || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, previousValuationInFavorOf: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-yellow-200 focus:border-yellow-500 focus:ring-yellow-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Approved Plan No</Label>
+                                                    <Input
+                                                        placeholder="Approved plan no"
+                                                        value={formData.pdfDetails?.approvedPlanNo || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, approvedPlanNo: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-yellow-200 focus:border-yellow-500 focus:ring-yellow-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Valuation Dates */}
+                                        <div className="mb-6 p-6 bg-green-50 rounded-2xl border border-green-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Valuation Dates</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Valuation Purpose</Label>
+                                                    <Input
+                                                        placeholder="Purpose"
+                                                        value={formData.pdfDetails?.valuationPurpose || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, valuationPurpose: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-green-200 focus:border-green-500 focus:ring-green-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Inspection Date</Label>
+                                                    <Input
+                                                        placeholder="Inspection date"
+                                                        value={formData.pdfDetails?.inspectionDate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, inspectionDate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-green-200 focus:border-green-500 focus:ring-green-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Valuation Made Date</Label>
+                                                    <Input
+                                                        placeholder="Valuation made date"
+                                                        value={formData.pdfDetails?.valuationMadeDate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, valuationMadeDate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-green-200 focus:border-green-500 focus:ring-green-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Property Owner & Description */}
+                                        <div className="mb-6 p-6 bg-purple-50 rounded-2xl border border-purple-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Property Description</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Owner Name</Label>
+                                                    <Input
+                                                        placeholder="Owner name"
+                                                        value={formData.pdfDetails?.ownerName || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, ownerName: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Plot/Survey Block No</Label>
+                                                    <Input
+                                                        placeholder="Plot/Survey block no"
+                                                        value={formData.pdfDetails?.plotSurveyBlockNo || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, plotSurveyBlockNo: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Door/Shop No</Label>
+                                                    <Input
+                                                        placeholder="Door/shop no"
+                                                        value={formData.pdfDetails?.doorShopNo || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, doorShopNo: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Village/Town</Label>
+                                                    <Input
+                                                        placeholder="Village/town"
+                                                        value={formData.pdfDetails?.tpVillage || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, tpVillage: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Ward/Taluka</Label>
+                                                    <Input
+                                                        placeholder="Ward/taluka"
+                                                        value={formData.pdfDetails?.wardTaluka || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, wardTaluka: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Mandal/District</Label>
+                                                    <Input
+                                                        placeholder="Mandal/district"
+                                                        value={formData.pdfDetails?.mandalDistrict || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, mandalDistrict: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Layout Plan Issue Date</Label>
+                                                    <Input
+                                                        placeholder="Layout plan issue date"
+                                                        value={formData.pdfDetails?.layoutPlanIssueDate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, layoutPlanIssueDate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Approved Map Authority</Label>
+                                                    <Input
+                                                        placeholder="Approved map authority"
+                                                        value={formData.pdfDetails?.approvedMapAuthority || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, approvedMapAuthority: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Authenticity Verified</Label>
+                                                    <Input
+                                                        placeholder="Authenticity verified"
+                                                        value={formData.pdfDetails?.authenticityVerified || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, authenticityVerified: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Valuer Comment on Authenticity</Label>
+                                                    <Input
+                                                        placeholder="Valuer comment"
+                                                        value={formData.pdfDetails?.valuerCommentOnAuthenticity || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, valuerCommentOnAuthenticity: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Location Details */}
+                                        <div className="mb-6 p-6 bg-cyan-50 rounded-2xl border border-cyan-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Location Details</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">City/Town</Label>
+                                                    <Input
+                                                        placeholder="City/town"
+                                                        name="cityTown"
+                                                        value={formData.pdfDetails?.cityTown || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, cityTown: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Residential Area</Label>
+                                                    <Input
+                                                        placeholder="Residential area"
+                                                        name="residentialArea"
+                                                        value={formData.pdfDetails?.residentialArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, residentialArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Commercial Area</Label>
+                                                    <Input
+                                                        placeholder="Commercial area"
+                                                        name="commercialArea"
+                                                        value={formData.pdfDetails?.commercialArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, commercialArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Industrial Area</Label>
+                                                    <Input
+                                                        placeholder="Industrial area"
+                                                        name="industrialArea"
+                                                        value={formData.pdfDetails?.industrialArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, industrialArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Location of Property</Label>
+                                                    <Input
+                                                        placeholder="Location of property"
+                                                        name="locationOfProperty"
+                                                        value={formData.pdfDetails?.locationOfProperty || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, locationOfProperty: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Area Classification */}
+                                        <div className="mb-6 p-6 bg-orange-50 rounded-2xl border border-orange-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Area Classification</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Classification Area</Label>
+                                                    <Input
+                                                        placeholder="Classification area"
+                                                        value={formData.pdfDetails?.classificationArea || ""}
+                                                        onChange={(e) => {
+                                                            setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, classificationArea: e.target.value } }));
+                                                        }}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-orange-200 focus:border-orange-500 focus:ring-orange-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Urban Type</Label>
+                                                    <Input
+                                                        placeholder="Urban type"
+                                                        value={formData.pdfDetails?.urbanType || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, urbanType: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-orange-200 focus:border-orange-500 focus:ring-orange-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Under Corporation</Label>
+                                                    <Input
+                                                        placeholder="Under corporation"
+                                                        value={formData.pdfDetails?.underCorporation || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, underCorporation: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-orange-200 focus:border-orange-500 focus:ring-orange-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Govt Enactment Cover</Label>
+                                                    <Input
+                                                        placeholder="Govt enactment cover"
+                                                        value={formData.pdfDetails?.govtEnactmentCover || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, govtEnactmentCover: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-orange-200 focus:border-orange-500 focus:ring-orange-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Boundaries */}
+                                        <div className="mb-6 p-6 bg-cyan-50 rounded-2xl border border-cyan-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Property Boundaries</h4>
+                                            <div className="mb-6">
+                                                <h5 className="font-semibold text-gray-700 mb-3">Boundaries (Document)</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">East</Label>
+                                                        <Input
+                                                            placeholder="East boundary"
+                                                            value={formData.pdfDetails?.boundariesDocument?.east || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesDocument: { ...prev.pdfDetails.boundariesDocument, east: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">West</Label>
+                                                        <Input
+                                                            placeholder="West boundary"
+                                                            value={formData.pdfDetails?.boundariesDocument?.west || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesDocument: { ...prev.pdfDetails.boundariesDocument, west: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">North</Label>
+                                                        <Input
+                                                            placeholder="North boundary"
+                                                            value={formData.pdfDetails?.boundariesDocument?.north || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesDocument: { ...prev.pdfDetails.boundariesDocument, north: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">South</Label>
+                                                        <Input
+                                                            placeholder="South boundary"
+                                                            value={formData.pdfDetails?.boundariesDocument?.south || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesDocument: { ...prev.pdfDetails.boundariesDocument, south: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h5 className="font-semibold text-gray-700 mb-3">Boundaries (Actual)</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">East</Label>
+                                                        <Input
+                                                            placeholder="East boundary"
+                                                            value={formData.pdfDetails?.boundariesActual?.east || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesActual: { ...prev.pdfDetails.boundariesActual, east: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">West</Label>
+                                                        <Input
+                                                            placeholder="West boundary"
+                                                            value={formData.pdfDetails?.boundariesActual?.west || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesActual: { ...prev.pdfDetails.boundariesActual, west: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">North</Label>
+                                                        <Input
+                                                            placeholder="North boundary"
+                                                            value={formData.pdfDetails?.boundariesActual?.north || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesActual: { ...prev.pdfDetails.boundariesActual, north: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-bold text-gray-900">South</Label>
+                                                        <Input
+                                                            placeholder="South boundary"
+                                                            value={formData.pdfDetails?.boundariesActual?.south || ""}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, boundariesActual: { ...prev.pdfDetails.boundariesActual, south: e.target.value } } }))}
+                                                            disabled={!canEdit}
+                                                            className="h-10 text-sm rounded-lg border-2 border-cyan-200"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Area Details */}
+                                        <div className="mb-6 p-6 bg-pink-50 rounded-2xl border border-pink-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Area Details</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Built-up Area</Label>
+                                                    <Input
+                                                        placeholder="Built-up area"
+                                                        value={formData.pdfDetails?.builtUpArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, builtUpArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Carpet Area</Label>
+                                                    <Input
+                                                        placeholder="Carpet area"
+                                                        value={formData.pdfDetails?.carpetArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, carpetArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">UDS/Land Area</Label>
+                                                    <Input
+                                                        placeholder="UDS/land area"
+                                                        value={formData.pdfDetails?.udsLand || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, udsLand: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Latitude/Longitude</Label>
+                                                    <Input
+                                                        placeholder="Latitude/longitude"
+                                                        value={formData.pdfDetails?.latitudeLongitude || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, latitudeLongitude: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Site Considered Area</Label>
+                                                    <Input
+                                                        placeholder="Site considered area"
+                                                        value={formData.pdfDetails?.siteConsideredArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, siteConsideredArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Occupancy Status</Label>
+                                                    <Input
+                                                        placeholder="Occupancy status"
+                                                        value={formData.pdfDetails?.occupancyStatus || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, occupancyStatus: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Apartment Details */}
+                                        <div className="mb-6 p-6 bg-rose-50 rounded-2xl border border-rose-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Apartment Details</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Apartment Nature</Label>
+                                                    <Input
+                                                        placeholder="Apartment nature"
+                                                        name="apartmentNature"
+                                                        value={formData.pdfDetails?.apartmentNature || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, apartmentNature: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Apartment Location</Label>
+                                                    <Input
+                                                        placeholder="Apartment location"
+                                                        name="apartmentLocation"
+                                                        value={formData.pdfDetails?.apartmentLocation || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, apartmentLocation: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Survey Block No</Label>
+                                                    <Input
+                                                        placeholder="Survey block no"
+                                                        value={formData.pdfDetails?.surveyBlockNo || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, surveyBlockNo: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">TP/FP No</Label>
+                                                    <Input
+                                                        placeholder="TP/FP no"
+                                                        value={formData.pdfDetails?.tpFpNo || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, tpFpNo: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Village/Municipality</Label>
+                                                    <Input
+                                                        placeholder="Village/municipality"
+                                                        name="villageMunicipality"
+                                                        value={formData.pdfDetails?.villageMunicipality || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, villageMunicipality: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Door/Street</Label>
+                                                    <Input
+                                                        placeholder="Door/street"
+                                                        name="doorStreet"
+                                                        value={formData.pdfDetails?.doorStreet || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, doorStreet: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Locality Description</Label>
+                                                    <Input
+                                                        placeholder="Locality description"
+                                                        name="localityDescription"
+                                                        value={formData.pdfDetails?.localityDescription || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, localityDescription: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Construction Year</Label>
+                                                    <Input
+                                                        placeholder="Construction year"
+                                                        name="constructionYear"
+                                                        value={formData.pdfDetails?.constructionYear || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, constructionYear: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Number of Floors</Label>
+                                                    <Input
+                                                        placeholder="Number of floors"
+                                                        name="numberOfFloors"
+                                                        value={formData.pdfDetails?.numberOfFloors || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, numberOfFloors: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Structure Type</Label>
+                                                    <Input
+                                                        placeholder="Structure type"
+                                                        name="structureType"
+                                                        value={formData.pdfDetails?.structureType || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, structureType: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Dwelling Units</Label>
+                                                    <Input
+                                                        placeholder="Dwelling units"
+                                                        name="dwellingUnits"
+                                                        value={formData.pdfDetails?.dwellingUnits || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, dwellingUnits: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Quality of Construction</Label>
+                                                    <Input
+                                                        placeholder="Quality of construction"
+                                                        value={formData.pdfDetails?.qualityOfConstruction || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, qualityOfConstruction: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Building Appearance</Label>
+                                                    <Input
+                                                        placeholder="Building appearance"
+                                                        value={formData.pdfDetails?.buildingAppearance || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, buildingAppearance: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Building Maintenance</Label>
+                                                    <Input
+                                                        placeholder="Building maintenance"
+                                                        value={formData.pdfDetails?.buildingMaintenance || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, buildingMaintenance: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Facilities Available */}
+                                            <div className="mt-6">
+                                                <h5 className="font-semibold text-gray-900 mb-4">Facilities Available</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="flex items-center gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="lift"
+                                                            checked={formData.pdfDetails?.facilities?.lift || false}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, facilities: { ...prev.pdfDetails.facilities, lift: e.target.checked } } }))}
+                                                            disabled={!canEdit}
+                                                            className="w-4 h-4 rounded border-rose-300 accent-rose-500"
+                                                        />
+                                                        <Label htmlFor="lift" className="text-sm font-medium text-gray-900 cursor-pointer">Lift</Label>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="waterSupply"
+                                                            checked={formData.pdfDetails?.facilities?.waterSupply || false}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, facilities: { ...prev.pdfDetails.facilities, waterSupply: e.target.checked } } }))}
+                                                            disabled={!canEdit}
+                                                            className="w-4 h-4 rounded border-rose-300 accent-rose-500"
+                                                        />
+                                                        <Label htmlFor="waterSupply" className="text-sm font-medium text-gray-900 cursor-pointer">Protected Water Supply</Label>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="sewerage"
+                                                            checked={formData.pdfDetails?.facilities?.sewerage || false}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, facilities: { ...prev.pdfDetails.facilities, sewerage: e.target.checked } } }))}
+                                                            disabled={!canEdit}
+                                                            className="w-4 h-4 rounded border-rose-300 accent-rose-500"
+                                                        />
+                                                        <Label htmlFor="sewerage" className="text-sm font-medium text-gray-900 cursor-pointer">Underground Sewerage</Label>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="parking"
+                                                            checked={formData.pdfDetails?.facilities?.parking || false}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, facilities: { ...prev.pdfDetails.facilities, parking: e.target.checked } } }))}
+                                                            disabled={!canEdit}
+                                                            className="w-4 h-4 rounded border-rose-300 accent-rose-500"
+                                                        />
+                                                        <Label htmlFor="parking" className="text-sm font-medium text-gray-900 cursor-pointer">Car Parking (Open/Covered)</Label>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="compoundWall"
+                                                            checked={formData.pdfDetails?.facilities?.compoundWall || false}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, facilities: { ...prev.pdfDetails.facilities, compoundWall: e.target.checked } } }))}
+                                                            disabled={!canEdit}
+                                                            className="w-4 h-4 rounded border-rose-300 accent-rose-500"
+                                                        />
+                                                        <Label htmlFor="compoundWall" className="text-sm font-medium text-gray-900 cursor-pointer">Compound Wall Existing</Label>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="pavement"
+                                                            checked={formData.pdfDetails?.facilities?.pavement || false}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, facilities: { ...prev.pdfDetails.facilities, pavement: e.target.checked } } }))}
+                                                            disabled={!canEdit}
+                                                            className="w-4 h-4 rounded border-rose-300 accent-rose-500"
+                                                        />
+                                                        <Label htmlFor="pavement" className="text-sm font-medium text-gray-900 cursor-pointer">Pavement Around Building</Label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Flat Floor</Label>
+                                                    <Input
+                                                        placeholder="Flat floor"
+                                                        value={formData.pdfDetails?.flatFloor || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatFloor: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Flat Door No</Label>
+                                                    <Input
+                                                        placeholder="Flat door no"
+                                                        value={formData.pdfDetails?.flatDoorNo || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatDoorNo: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-rose-200 focus:border-rose-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Flat Specifications & House Tax */}
+                                        <div className="mb-6 p-6 bg-lime-50 rounded-2xl border border-lime-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Flat Specifications & House Tax</h4>
+                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                <div>
+                                                    <h5 className="font-semibold text-gray-700 mb-2">Flat Specifications</h5>
+                                                    <div className="space-y-2">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Specification of the Flat</Label>
+                                                            <Input
+                                                                placeholder="Specifications"
+                                                                value={formData.pdfDetails?.flatSpecifications?.specifications || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, specifications: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Roof</Label>
+                                                            <Input
+                                                                placeholder="Roof"
+                                                                value={formData.pdfDetails?.flatSpecifications?.roof || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, roof: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Flooring</Label>
+                                                            <Input
+                                                                placeholder="Flooring"
+                                                                value={formData.pdfDetails?.flatSpecifications?.flooring || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, flooring: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Doors</Label>
+                                                            <Input
+                                                                placeholder="Doors"
+                                                                value={formData.pdfDetails?.flatSpecifications?.doors || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, doors: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Windows</Label>
+                                                            <Input
+                                                                placeholder="Windows"
+                                                                value={formData.pdfDetails?.flatSpecifications?.windows || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, windows: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Fittings</Label>
+                                                            <Input
+                                                                placeholder="Fittings"
+                                                                value={formData.pdfDetails?.flatSpecifications?.fittings || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, fittings: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Finishing</Label>
+                                                            <Input
+                                                                placeholder="Finishing"
+                                                                value={formData.pdfDetails?.flatSpecifications?.finishing || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatSpecifications: { ...prev.pdfDetails.flatSpecifications, finishing: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h5 className="font-semibold text-gray-700 mb-2">House Tax & Electricity</h5>
+                                                    <div className="space-y-2">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Assessment No</Label>
+                                                            <Input
+                                                                placeholder="Assessment no"
+                                                                value={formData.pdfDetails?.houseTax?.assessmentNo || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, houseTax: { ...prev.pdfDetails.houseTax, assessmentNo: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Tax Paid By</Label>
+                                                            <Input
+                                                                placeholder="Tax paid by"
+                                                                value={formData.pdfDetails?.houseTax?.taxPaidBy || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, houseTax: { ...prev.pdfDetails.houseTax, taxPaidBy: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Tax Amount</Label>
+                                                            <Input
+                                                                placeholder="Tax amount"
+                                                                value={formData.pdfDetails?.houseTax?.taxAmount || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, houseTax: { ...prev.pdfDetails.houseTax, taxAmount: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Connection No</Label>
+                                                            <Input
+                                                                placeholder="Connection no"
+                                                                value={formData.pdfDetails?.electricityConnection?.connectionNo || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, electricityConnection: { ...prev.pdfDetails.electricityConnection, connectionNo: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-sm font-bold text-gray-900">Meter Name</Label>
+                                                            <Input
+                                                                placeholder="Meter name"
+                                                                value={formData.pdfDetails?.electricityConnection?.meterName || ""}
+                                                                onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, electricityConnection: { ...prev.pdfDetails.electricityConnection, meterName: e.target.value } } }))}
+                                                                disabled={!canEdit}
+                                                                className="h-10 text-sm rounded-lg border-2 border-lime-200"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Additional Property Details */}
+                                        <div className="mb-6 p-6 bg-violet-50 rounded-2xl border border-violet-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Additional Property Details</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Flat Maintenance</Label>
+                                                    <Input
+                                                        placeholder="Flat maintenance"
+                                                        value={formData.pdfDetails?.flatMaintenance || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatMaintenance: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Sale Deed Name</Label>
+                                                    <Input
+                                                        placeholder="Sale deed name"
+                                                        value={formData.pdfDetails?.saleDeedName || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, saleDeedName: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Undivided Land Area</Label>
+                                                    <Input
+                                                        placeholder="Undivided land area"
+                                                        value={formData.pdfDetails?.undividedLandArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, undividedLandArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Plinth Area</Label>
+                                                    <Input
+                                                        placeholder="Plinth area"
+                                                        value={formData.pdfDetails?.plinthArea || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, plinthArea: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">FSI</Label>
+                                                    <Input
+                                                        placeholder="FSI"
+                                                        value={formData.pdfDetails?.fsi || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, fsi: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Carpet Area Valuation</Label>
+                                                    <Input
+                                                        placeholder="Carpet area valuation"
+                                                        value={formData.pdfDetails?.carpetAreaValuation || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, carpetAreaValuation: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Flat Class</Label>
+                                                    <Input
+                                                        placeholder="Flat class"
+                                                        value={formData.pdfDetails?.flatClass || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, flatClass: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Usage</Label>
+                                                    <Input
+                                                        placeholder="Usage"
+                                                        value={formData.pdfDetails?.usage || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, usage: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Occupancy</Label>
+                                                    <Input
+                                                        placeholder="Occupancy"
+                                                        value={formData.pdfDetails?.occupancy || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, occupancy: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Rent</Label>
+                                                    <Input
+                                                        placeholder="Rent"
+                                                        value={formData.pdfDetails?.rent || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, rent: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-violet-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Market Value Analysis - Part 1 */}
+                                        <div className="mb-6 p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Market Value Analysis - Rates & Factors</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Marketability</Label>
+                                                    <Input
+                                                        placeholder="Marketability"
+                                                        value={formData.pdfDetails?.marketability || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, marketability: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Positive Factors</Label>
+                                                    <Input
+                                                        placeholder="Positive factors"
+                                                        value={formData.pdfDetails?.positiveFactors || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, positiveFactors: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Negative Factors</Label>
+                                                    <Input
+                                                        placeholder="Negative factors"
+                                                        value={formData.pdfDetails?.negativeFactors || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, negativeFactors: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Composite Rate</Label>
+                                                    <Input
+                                                        placeholder="Composite rate"
+                                                        value={formData.pdfDetails?.compositeRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, compositeRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Jantri Rate</Label>
+                                                    <Input
+                                                        placeholder="Jantri rate"
+                                                        value={formData.pdfDetails?.jantriRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, jantriRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Basic Composite Rate</Label>
+                                                    <Input
+                                                        placeholder="Basic composite rate"
+                                                        value={formData.pdfDetails?.basicCompositeRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, basicCompositeRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Building Service Rate</Label>
+                                                    <Input
+                                                        placeholder="Building service rate"
+                                                        value={formData.pdfDetails?.buildingServiceRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, buildingServiceRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Land Other Rate</Label>
+                                                    <Input
+                                                        placeholder="Land other rate"
+                                                        value={formData.pdfDetails?.landOtherRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, landOtherRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Market Value Analysis - Part 2 */}
+                                        <div className="mb-6 p-6 bg-sky-50 rounded-2xl border border-sky-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Depreciation & Building Analysis</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Depreciated Building Rate</Label>
+                                                    <Input
+                                                        placeholder="Depreciated building rate"
+                                                        value={formData.pdfDetails?.depreciatedBuildingRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, depreciatedBuildingRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Replacement Cost</Label>
+                                                    <Input
+                                                        placeholder="Replacement cost"
+                                                        value={formData.pdfDetails?.replacementCost || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, replacementCost: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Building Age</Label>
+                                                    <Input
+                                                        placeholder="Building age"
+                                                        value={formData.pdfDetails?.buildingAge || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, buildingAge: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Building Life</Label>
+                                                    <Input
+                                                        placeholder="Building life"
+                                                        value={formData.pdfDetails?.buildingLife || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, buildingLife: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Depreciation Percentage</Label>
+                                                    <Input
+                                                        placeholder="Depreciation percentage"
+                                                        value={formData.pdfDetails?.depreciationPercentage || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, depreciationPercentage: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Depreciated Ratio</Label>
+                                                    <Input
+                                                        placeholder="Depreciated ratio"
+                                                        value={formData.pdfDetails?.depreciatedRatio || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, depreciatedRatio: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Final Composite Rate</Label>
+                                                    <Input
+                                                        placeholder="Final composite rate"
+                                                        value={formData.pdfDetails?.finalCompositeRate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, finalCompositeRate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Present Value</Label>
+                                                    <Input
+                                                        placeholder="Present value"
+                                                        value={formData.pdfDetails?.presentValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, presentValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Furniture Fixture Value</Label>
+                                                    <Input
+                                                        placeholder="Furniture fixture value"
+                                                        value={formData.pdfDetails?.furnitureFixtureValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, furnitureFixtureValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Total Value</Label>
+                                                    <Input
+                                                        placeholder="Total value"
+                                                        value={formData.pdfDetails?.totalValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, totalValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-sky-200 focus:border-sky-500 focus:ring-sky-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Valuation Results */}
+                                        <div className="mb-6 p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Valuation Results</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Fair Market Value</Label>
+                                                    <Input
+                                                        placeholder="Fair market value"
+                                                        value={formData.pdfDetails?.fairMarketValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, fairMarketValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Realizable Value</Label>
+                                                    <Input
+                                                        placeholder="Realizable value"
+                                                        value={formData.pdfDetails?.realizableValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, realizableValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Distress Value</Label>
+                                                    <Input
+                                                        placeholder="Distress value"
+                                                        value={formData.pdfDetails?.distressValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, distressValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Sale Deed Value</Label>
+                                                    <Input
+                                                        placeholder="Sale deed value"
+                                                        value={formData.pdfDetails?.saleDeedValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, saleDeedValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Insurable Value</Label>
+                                                    <Input
+                                                        placeholder="Insurable value"
+                                                        value={formData.pdfDetails?.insurableValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, insurableValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Total Jantri Value</Label>
+                                                    <Input
+                                                        placeholder="Total jantri value"
+                                                        value={formData.pdfDetails?.totalJantriValue || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, totalJantriValue: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Fair Market Value (in Words)</Label>
+                                                    <Input
+                                                        placeholder="Fair market value in words"
+                                                        value={formData.pdfDetails?.fairMarketValueWords || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, fairMarketValueWords: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Additional Flat Details */}
+                                        <div className="mb-6 p-6 bg-purple-50 rounded-2xl border border-purple-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Additional Flat Details</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Area Usage</Label>
+                                                    <Input
+                                                        placeholder="Area usage"
+                                                        value={formData.pdfDetails?.areaUsage || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, areaUsage: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Carpet Area (Flat)</Label>
+                                                    <Input
+                                                        placeholder="Carpet area flat"
+                                                        value={formData.pdfDetails?.carpetAreaFlat || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, carpetAreaFlat: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-purple-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Signature & Report Details */}
+                                        <div className="mb-6 p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                                            <h4 className="font-bold text-gray-900 mb-4">Signature & Report Details</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Place</Label>
+                                                    <Input
+                                                        placeholder="Place"
+                                                        value={formData.pdfDetails?.place || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, place: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-amber-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Signature Date</Label>
+                                                    <Input
+                                                        placeholder="Signature date"
+                                                        value={formData.pdfDetails?.signatureDate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, signatureDate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-amber-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Signer Name</Label>
+                                                    <Input
+                                                        placeholder="Signer name"
+                                                        value={formData.pdfDetails?.signerName || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, signerName: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-amber-200"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-bold text-gray-900">Report Date</Label>
+                                                    <Input
+                                                        placeholder="Report date"
+                                                        value={formData.pdfDetails?.reportDate || ""}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, reportDate: e.target.value } }))}
+                                                        disabled={!canEdit}
+                                                        className="h-10 text-sm rounded-lg border-2 border-amber-200"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="border-t-2 border-gray-200 pt-6 mt-6">
                                         <div className="flex gap-3">
                                             {canEdit && (
                                                 <>
@@ -1383,13 +3098,13 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 </>
                                             )}
                                         </div>
-                                        </div>
+                                    </div>
 
-                                        </div>
-                                        </CardContent>
-                                        </Card>
-                                        </div>
-                                        </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
 
             {/* Approval/Rejection Dialog */}

@@ -5,6 +5,7 @@ const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
+    const [unauthorizedNotificationId, setUnauthorizedNotificationId] = useState(null);
     const timeoutsRef = React.useRef({});
 
     // Cleanup all timeouts on unmount
@@ -61,6 +62,21 @@ export const NotificationProvider = ({ children }) => {
         return showNotification(message, "info", duration);
     }, [showNotification]);
 
+    // Show persistent unauthorized error (no auto-close)
+    const showUnauthorizedError = useCallback((message = "Unauthorized – Please login to continue.") => {
+        const id = showNotification(message, "error", -1); // -1 means no auto-close
+        setUnauthorizedNotificationId(id);
+        return id;
+    }, [showNotification]);
+
+    // Hide unauthorized error notification
+    const hideUnauthorizedError = useCallback(() => {
+        if (unauthorizedNotificationId) {
+            removeNotification(unauthorizedNotificationId);
+            setUnauthorizedNotificationId(null);
+        }
+    }, [unauthorizedNotificationId, removeNotification]);
+
     return (
         <NotificationContext.Provider
             value={{
@@ -70,6 +86,8 @@ export const NotificationProvider = ({ children }) => {
                 showWarning,
                 showInfo,
                 removeNotification,
+                showUnauthorizedError,
+                hideUnauthorizedError,
                 notifications,
             }}
         >

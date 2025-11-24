@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar, FaLock, FaComments, FaClock, FaSpinner, FaCheckCircle, FaTimesCircle, FaEdit } from "react-icons/fa";
+import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar, FaLock, FaComments, FaClock, FaSpinner, FaCheckCircle, FaTimesCircle, FaEdit, FaFileAlt } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../components/ui";
 import { getAllValuations } from "../services/valuationservice";
@@ -91,7 +91,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
             return sortOrder === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         }
 
-        // Handle numeric sorting
+        // Handle numeric sorting 
         if (sortOrder === "asc") {
             return aVal > bVal ? 1 : -1;
         } else {
@@ -328,6 +328,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                 <p className="text-xs text-white font-semibold mt-0.5 hidden sm:block drop-shadow-sm">
                                     {!isLoggedIn ? "📊 Read-Only Mode" : role === "user" ? "📝 Manage Your Submissions" : ["manager1", "manager2"].includes(role) ? "✅ Review User Submissions" : "⚙️ System Administrator"}
                                 </p>
+                                
                             </div>
                         </div>
 
@@ -346,7 +347,6 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                     >
                                         <FaPlus className="h-5 w-5 sm:h-6 sm:w-6 text-[#F36E21]" />
                                     </button>
-
                                     <div className="h-8 sm:h-10 w-px bg-white/30"></div>
                                 </>
                             )}
@@ -724,6 +724,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                                                     <FaEdit className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
+                                                            
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>

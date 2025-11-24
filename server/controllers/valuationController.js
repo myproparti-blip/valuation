@@ -30,7 +30,7 @@ export const createValuation = async (req, res) => {
             lastUpdatedBy: requestUser.username,
             lastUpdatedByRole: requestUser.role
         };
-        
+
         try {
             await File.updateOne(
                 { uniqueId: fileData.uniqueId },
@@ -74,12 +74,12 @@ export const getValuationById = async (req, res) => {
         if (requestUser.role !== "admin") {
             // Check if it's manager's own record - allow viewing their own profile
             const isOwnRecord = form.username === requestUser.username;
-            
+
             // Non-admin managers must check if it's a user record OR their own record
             if (!form.username.toLowerCase().startsWith("user") && !isOwnRecord) {
                 return res.status(403).json({ success: false, message: "Forbidden - You can only view user records" });
             }
-            
+
             // Only apply user restrictions if viewing a user record (not own record)
             if (!isOwnRecord) {
                 // manager1: Can only see user1, user2, user3, user4, user5
@@ -89,7 +89,7 @@ export const getValuationById = async (req, res) => {
                         return res.status(403).json({ success: false, message: "Forbidden - You can only view user1 to user5 records" });
                     }
                 }
-                
+
                 // manager2: Can only see user6 and onwards (not user1-user5)
                 if (requestUser.role === "manager2") {
                     const restrictedUsers = ["user1", "user2", "user3", "user4", "user5"];
@@ -114,7 +114,7 @@ const validateUpdateData = (data) => {
     if (!data.clientName || typeof data.clientName !== 'string' || !data.clientName.trim()) {
         errors.push("Client Name is required");
     }
-    
+
     if (!data.mobileNumber || !data.mobileNumber.toString().trim()) {
         errors.push("Mobile Number is required");
     } else {
@@ -124,7 +124,7 @@ const validateUpdateData = (data) => {
             errors.push("Mobile Number must be 10 digits");
         }
     }
-    
+
     if (!data.address || typeof data.address !== 'string' || !data.address.trim()) {
         errors.push("Address is required");
     }
@@ -133,23 +133,14 @@ const validateUpdateData = (data) => {
     if (!data.bankName || typeof data.bankName !== 'string' || !data.bankName.trim()) {
         errors.push("Bank Name is required");
     }
-    if (data.bankName === "other" && (!data.customBankName || !data.customBankName.trim())) {
-        errors.push("Custom bank name is required when 'Other' is selected");
-    }
-    
+
     if (!data.city || typeof data.city !== 'string' || !data.city.trim()) {
         errors.push("City is required");
-    }
-    if (data.city === "other" && (!data.customCity || !data.customCity.trim())) {
-        errors.push("Custom city name is required when 'Other' is selected");
     }
 
     // === DSA ===
     if (!data.dsa || typeof data.dsa !== 'string' || !data.dsa.trim()) {
         errors.push("DSA (Sales Agent) is required");
-    }
-    if (data.dsa === "other" && (!data.customDsa || !data.customDsa.trim())) {
-        errors.push("Custom DSA name is required when 'Other' is selected");
     }
 
     // === ENGINEER ===
@@ -164,7 +155,7 @@ const validateUpdateData = (data) => {
     if (data.payment && !["yes", "no"].includes(data.payment)) {
         errors.push("Payment status must be 'yes' or 'no'");
     }
-    
+
     if (data.payment === "yes" && (!data.collectedBy || !data.collectedBy.trim())) {
         errors.push("Collected By name is required when payment is collected");
     }
@@ -178,7 +169,7 @@ const validateUpdateData = (data) => {
                 errors.push("Latitude must be a valid number between -90 and 90");
             }
         }
-        
+
         if (data.coordinates.longitude) {
             const lng = parseFloat(data.coordinates.longitude);
             if (isNaN(lng) || lng < -180 || lng > 180) {
@@ -203,9 +194,16 @@ const validateUpdateData = (data) => {
     if (data.propertyImages && !Array.isArray(data.propertyImages)) {
         errors.push("Property Images must be an array");
     }
-    
+
     if (data.locationImages && !Array.isArray(data.locationImages)) {
         errors.push("Location Images must be an array");
+    }
+
+    // === PDF DETAILS ===
+    // PDF Details are optional and can contain any string/object values
+    // Basic validation: if provided, it should be an object
+    if (data.pdfDetails && typeof data.pdfDetails !== 'object') {
+        errors.push("PDF Details must be an object");
     }
 
     return errors;
@@ -217,9 +215,13 @@ export const updateValuation = async (req, res) => {
         const { id } = req.params;
         const requestUser = req.user;
 
+        // Debug: Log what we're receiving
+        console.log("UPDATE VALUATION - Request body keys:", Object.keys(req.body));
+        console.log("UPDATE VALUATION - pdfDetails received:", req.body.pdfDetails ? "YES" : "NO");
+
         // Handle both JSON and FormData requests
         let updateData = {};
-        
+
         if (req.body.data && typeof req.body.data === 'string') {
             try {
                 updateData = JSON.parse(req.body.data);
@@ -230,12 +232,18 @@ export const updateValuation = async (req, res) => {
             updateData = { ...req.body };
         }
 
+        console.log("UPDATE VALUATION - updateData keys:", Object.keys(updateData));
+        console.log("UPDATE VALUATION - pdfDetails in updateData:", updateData.pdfDetails ? "YES" : "NO");
+
         // Parse JSON fields that were stringified
         if (updateData.directions && typeof updateData.directions === 'string') {
             updateData.directions = JSON.parse(updateData.directions);
         }
         if (updateData.coordinates && typeof updateData.coordinates === 'string') {
             updateData.coordinates = JSON.parse(updateData.coordinates);
+        }
+        if (updateData.pdfDetails && typeof updateData.pdfDetails === 'string') {
+            updateData.pdfDetails = JSON.parse(updateData.pdfDetails);
         }
 
         // Images are now coming from Cloudinary URLs (no file processing needed)
@@ -247,6 +255,11 @@ export const updateValuation = async (req, res) => {
             updateData.locationImages = [];
         }
 
+        // Ensure pdfDetails is preserved if it exists
+        if (!updateData.pdfDetails) {
+            updateData.pdfDetails = {};
+        }
+
         delete updateData._id;
         delete updateData.__v;
         delete updateData.uniqueId; // Don't allow changing the ID
@@ -255,10 +268,10 @@ export const updateValuation = async (req, res) => {
         // Validate input data
         const validationErrors = validateUpdateData(updateData);
         if (validationErrors.length > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Validation failed", 
-                errors: validationErrors 
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: validationErrors
             });
         }
 
@@ -284,9 +297,9 @@ export const updateValuation = async (req, res) => {
             const clientInfoFields = ['clientName', 'mobileNumber', 'bankName', 'city', 'dsa', 'address', 'engineerName'];
             for (const field of clientInfoFields) {
                 if (updateData[field] !== undefined && updateData[field] !== existingValuation[field]) {
-                    return res.status(403).json({ 
-                        success: false, 
-                        message: `Forbidden - Users cannot modify ${field}. Only administrators can edit client information.` 
+                    return res.status(403).json({
+                        success: false,
+                        message: `Forbidden - Users cannot modify ${field}. Only administrators can edit client information.`
                     });
                 }
             }
@@ -309,9 +322,9 @@ export const updateValuation = async (req, res) => {
             const clientInfoFields = ['clientName', 'mobileNumber', 'bankName', 'city', 'dsa', 'address', 'engineerName'];
             for (const field of clientInfoFields) {
                 if (updateData[field] !== undefined && updateData[field] !== existingValuation[field]) {
-                    return res.status(403).json({ 
-                        success: false, 
-                        message: `Forbidden - Managers cannot modify ${field}. Only administrators can edit client information.` 
+                    return res.status(403).json({
+                        success: false,
+                        message: `Forbidden - Managers cannot modify ${field}. Only administrators can edit client information.`
                     });
                 }
             }
@@ -339,6 +352,15 @@ export const updateValuation = async (req, res) => {
             }
         }
 
+        // Ensure pdfDetails is properly merged with existing data
+        if (updateData.pdfDetails && typeof updateData.pdfDetails === 'object') {
+            const existingPdfDetails = existingValuation.pdfDetails || {};
+            updateData.pdfDetails = {
+                ...existingPdfDetails,
+                ...updateData.pdfDetails
+            };
+        }
+
         const updatePayload = {
             ...updateData,
             lastUpdatedAt: new Date(),
@@ -362,14 +384,14 @@ export const updateValuation = async (req, res) => {
             : "Valuation updated successfully and status changed to 'On Progress'";
 
         res.status(200).json({
-             success: true,
-             message: statusMessage,
-             data: updated,
-         });
+            success: true,
+            message: statusMessage,
+            data: updated,
+        });
     } catch (err) {
         res.status(500).json({ success: false, message: "Error updating valuation", error: err.message });
     }
-    };
+};
 
 // MANAGER/ADMIN SUBMIT ACTION (Approve/Reject)
 export const managerSubmit = async (req, res) => {
@@ -380,46 +402,46 @@ export const managerSubmit = async (req, res) => {
 
         // Authorization: Only manager1, manager2, and admin can submit
         if (requestUser.role !== "manager1" && requestUser.role !== "manager2" && requestUser.role !== "admin") {
-            return res.status(403).json({ 
-                success: false, 
-                message: "Forbidden - Only manager or admin can approve/reject" 
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden - Only manager or admin can approve/reject"
             });
         }
 
         // Validate status
         if (!["approved", "rejected"].includes(status)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Invalid status. Must be 'approved' or 'rejected'" 
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status. Must be 'approved' or 'rejected'"
             });
         }
 
         // Get valuation to ensure it exists and is in a reviewable state
         const existingValuation = await ValuationModel.findOne({ uniqueId: id });
-        
+
         if (!existingValuation) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "Valuation not found" 
+            return res.status(404).json({
+                success: false,
+                message: "Valuation not found"
             });
         }
 
         // Only pending, on-progress, or rejected valuations can be approved/rejected
         if (existingValuation.status !== "pending" && existingValuation.status !== "on-progress" && existingValuation.status !== "rejected") {
-            return res.status(400).json({ 
-                success: false, 
-                message: `Cannot approve/reject ${existingValuation.status} forms` 
+            return res.status(400).json({
+                success: false,
+                message: `Cannot approve/reject ${existingValuation.status} forms`
             });
         }
 
         // Can approve/reject user submissions OR own submissions (admin/manager can approve/reject their own)
         const isUserSubmission = existingValuation.username.toLowerCase().startsWith("user");
         const isOwnSubmission = existingValuation.username === requestUser.username;
-        
+
         if (!isUserSubmission && !isOwnSubmission) {
-            return res.status(403).json({ 
-                success: false, 
-                message: "Forbidden - Can only approve/reject user submissions or your own submissions" 
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden - Can only approve/reject user submissions or your own submissions"
             });
         }
 
@@ -462,10 +484,10 @@ export const managerSubmit = async (req, res) => {
             data: updatedValuation,
         });
     } catch (err) {
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: "Error processing valuation",
-            error: err.message 
+            error: err.message
         });
     }
 };
@@ -510,7 +532,7 @@ export const getAllValuations = async (req, res) => {
             .maxTimeMS(30000)
             .lean()
             .exec();
-        
+
         res.status(200).json(valuations);
     } catch (error) {
         console.error("Error in getAllValuations:", error.message);

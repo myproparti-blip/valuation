@@ -2,7 +2,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 /**
- * Generate exact replica of ICICI Bank Valuation Report PDF with Dashboard UI
+ * Generate Indian Valuation Report PDF matching the exact screenshot layout
+ * Uses only dynamic data from the valuation record - no static text or placeholders
+ * Letterhead design: MAHIM Architect with geometric borders and footer contact info
  */
 export const generateICICIValuationReport = (recordData = {}) => {
     const doc = new jsPDF({
@@ -13,767 +15,609 @@ export const generateICICIValuationReport = (recordData = {}) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 10;
-    let yPosition = 10;
+    const margin = 15;
+    const baseRowHeight = 5;
+    let yPosition = 35;
 
-    // Set colors matching the original document
-    const headerColor = [0, 0, 0]; // Black for headers
-    const borderColor = [0, 0, 0]; // Black borders
-    const textColor = [0, 0, 0]; // Black text
-    const lightGray = [240, 240, 240]; // Light gray for header backgrounds
-    const darkBlue = [25, 55, 109]; // Dark blue for ICICI header
+    const pdfData = recordData.pdfDetails || {};
+
+    /**
+     * Add letterhead on every page
+     */
+    const addLetterhead = () => {
+        const headerHeight = 30;
+        
+        // Top black bar
+        doc.setFillColor(0, 0, 0);
+        doc.rect(0, 0, pageWidth, 3, 'F');
+        
+        // MAHIM Architect orange logo box (top right)
+        doc.setFillColor(255, 102, 0);
+        doc.rect(pageWidth - 50, 5, 48, 25, 'F');
+        
+        // MAHIM text in white
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('MAHIM', pageWidth - 48, 18);
+        
+        // Architect text in white
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(255, 255, 255);
+        doc.text('Architect', pageWidth - 45, 26);
+        
+        // Left side geometric border - simplified colorful bars
+        const borderColors = [
+            [255, 0, 0],      // Red
+            [0, 0, 255],      // Blue
+            [0, 255, 255],    // Cyan
+            [128, 0, 128],    // Purple
+            [255, 165, 0],    // Orange
+            [0, 128, 0],      // Green
+            [255, 255, 0]     // Yellow
+        ];
+        
+        doc.setLineWidth(0.5);
+        let barY = 0;
+        const barHeight = pageHeight / borderColors.length;
+        
+        borderColors.forEach((color, idx) => {
+            doc.setFillColor(...color);
+            doc.rect(0, barY, 2, barHeight, 'F');
+            barY += barHeight;
+        });
+        
+        // Footer divider line
+        const footerDividerY = pageHeight - 19;
+        doc.setDrawColor(200, 0, 0);
+        doc.setLineWidth(1);
+        doc.line(margin + 2, footerDividerY, pageWidth - margin - 2, footerDividerY);
+        
+        // Footer section with consistent positioning
+        const footerY = pageHeight - 15;
+        const footerLineHeight = 3.3;
+        
+        // Left column - Locations with map icons (◆)
+        const leftColX = margin + 2;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(255, 0, 0);
+        doc.text('◆ Ahmedabad◆ Surat◆ Vadodara', leftColX, footerY);
+        doc.text('◆ Delhi◆ Gurgaon◆ Bangalore', leftColX, footerY + footerLineHeight);
+        doc.text('◆ Mumbai◆ Canada', leftColX, footerY + (footerLineHeight * 2));
+        
+        // Center column - Tagline (2 lines, centered)
+        const centerColX = pageWidth / 2;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        const tagline1Width = doc.getTextWidth('A Tradition of Excellence,');
+        const tagline2Width = doc.getTextWidth('Trust & Service');
+        doc.text('A Tradition of Excellence,', centerColX - tagline1Width / 2, footerY);
+        doc.text('Trust & Service', centerColX - tagline2Width / 2, footerY + footerLineHeight);
+        
+        // Right column - Contact info (3 lines, right-aligned)
+        const rightColX = pageWidth - margin - 2;
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        const phoneWidth = doc.getTextWidth('9265923178/8238737000');
+        const emailWidth = doc.getTextWidth('valuer@mahimarchitect.com');
+        const websiteWidth = doc.getTextWidth('www.mahimarchitect.com');
+        
+        doc.text('9265923178/8238737000', rightColX - phoneWidth, footerY);
+        doc.text('valuer@mahimarchitect.com', rightColX - emailWidth, footerY + footerLineHeight);
+        doc.text('www.mahimarchitect.com', rightColX - websiteWidth, footerY + (footerLineHeight * 2));
+    };
+    
+    addLetterhead();
+
+    // Fixed column widths
+    const col1Width = 12;  // Row number
+    const col2Width = 95;  // Label
+    const col3Width = pageWidth - margin * 2 - col1Width - col2Width;  // Value
+
+    // Colors
+    const borderColor = [0, 0, 0];
+    const headerBgColor = [200, 200, 200];
+
+    /**
+     * Calculate text lines and height for proper alignment
+     */
+    const getTextLines = (text, maxWidth) => {
+        if (!text || text.trim() === '') return [];
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        return doc.splitTextToSize(String(text), maxWidth - 2);
+    };
+
+    /**
+     * Draw table borders for a cell
+     */
+    const drawCell = (x, y, width, height) => {
+        doc.setDrawColor(...borderColor);
+        doc.setLineWidth(0.3);
+        doc.rect(x, y, width, height);
+    };
+
+    /**
+     * Draw text in a cell with proper alignment
+     */
+    const drawCellText = (text, x, y, width, height, isRowNumber = false) => {
+        doc.setFontSize(isRowNumber ? 8 : 7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+
+        if (!text || text.trim() === '') {
+            return;
+        }
+
+        const lines = doc.splitTextToSize(String(text), width - 2);
+        const lineHeight = 3.5;
+        const totalTextHeight = lines.length * lineHeight;
+        const startY = y + (height - totalTextHeight) / 2 + lineHeight - 0.5;
+
+        doc.text(lines, x + 1, startY, { maxWidth: width - 2 });
+    };
+
+    /**
+     * Add a single table row with 3 columns, handles multi-line text
+     */
+    const addTableRow = (rowNum, label, value, yPos) => {
+        // Get all text lines
+        const rowNumLines = rowNum ? [rowNum] : [];
+        const labelLines = getTextLines(label, col2Width);
+        const valueLines = getTextLines(value, col3Width);
+
+        // Calculate required height
+        const maxLines = Math.max(rowNumLines.length, labelLines.length, valueLines.length);
+        const rowHeight = Math.max(baseRowHeight, maxLines * 3.5 + 2);
+
+        // Draw column 1: Row number
+        drawCell(margin, yPos, col1Width, rowHeight);
+        if (rowNum) {
+            drawCellText(rowNum, margin, yPos, col1Width, rowHeight, true);
+        }
+
+        // Draw column 2: Label
+        drawCell(margin + col1Width, yPos, col2Width, rowHeight);
+        drawCellText(labelLines.join('\n'), margin + col1Width, yPos, col2Width, rowHeight, false);
+
+        // Draw column 3: Value
+        drawCell(margin + col1Width + col2Width, yPos, col3Width, rowHeight);
+        drawCellText(valueLines.join('\n'), margin + col1Width + col2Width, yPos, col3Width, rowHeight, false);
+
+        return yPos + rowHeight;
+    };
+
+    /**
+     * Add section header
+     */
+    const addSectionHeader = (title, yPos) => {
+        drawCell(margin, yPos, pageWidth - 2 * margin, baseRowHeight);
+        doc.setFillColor(...headerBgColor);
+        doc.rect(margin, yPos, pageWidth - 2 * margin, baseRowHeight, 'F');
+        drawCell(margin, yPos, pageWidth - 2 * margin, baseRowHeight);
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(title, margin + 2, yPos + 3.5);
+
+        return yPos + baseRowHeight;
+    };
+
+    /**
+     * Check and manage page breaks
+     */
+    const checkPageBreak = (currentY, minSpaceNeeded = 20) => {
+        if (currentY + minSpaceNeeded > pageHeight - 20) {
+            doc.addPage();
+            addLetterhead();
+            return 35;
+        }
+        return currentY;
+    };
 
     // ===== PAGE 1 =====
 
-    // ICICI Header Background
-    doc.setFillColor(...darkBlue);
-    doc.rect(0, 0, pageWidth, 20, 'F');
+    // Header info
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.text('To:', margin, yPosition);
+    doc.text(pdfData.branch || '', margin + 8, yPosition);
+    yPosition += 4;
+    doc.text(recordData.branchName || '', margin + 8, yPosition);
+    yPosition += 4;
 
-    // ICICI Logo and Title
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text('ICICI Home Finance', margin + 2, 8);
+    // File No and Date on right
+    const rightCol = pageWidth - 60;
+    doc.setFontSize(8);
+    const formIdValue = pdfData.formId || recordData.formId || '';
+    const dateValue = pdfData.valuationMadeDate || recordData.valuationMadeDate || '';
+    doc.text(`File No: ${formIdValue}`, rightCol, yPosition - 4);
+    doc.text(`Date: ${dateValue}`, rightCol, yPosition);
 
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Asset Valuation', margin + 2, 14);
+    yPosition += 3;
 
-    yPosition = 25;
+    // Main title
+    yPosition = addSectionHeader('VALUATION REPORT(IN RESPECT OF FLAT/HOUSE/INDUSTRIAL/SHOP)', yPosition);
 
-    // Main Title - INDIVIDUAL TECHNICAL REPORT
-    doc.setFillColor(25, 55, 109);
-    doc.rect(0, yPosition - 2, pageWidth, 6, 'F');
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text('INDIVIDUAL TECHNICAL REPORT', margin, yPosition + 1);
+    // GENERAL section
+    yPosition = addSectionHeader('GENERAL', yPosition);
 
-    yPosition += 10;
-    doc.setTextColor(...textColor);
-
-    // Request Information Table
-    const requestData = [
-        ['Request ID:', recordData.uniqueId ? recordData.uniqueId.substring(0, 40) : '', 'Application No.:', recordData.mobileNumber || ''],
-        ['Customer Name:', recordData.clientName || '', 'Branch :', recordData.city || ''],
-        ['Product Name:', recordData.bankName || '', 'BSM/RM Name:', recordData.engineerName || ''],
-        ['Loan Property Type:', recordData.dsa || '', 'Visited User Type:', recordData.payment === 'yes' ? 'Collected' : (recordData.payment === 'no' ? 'Not Collected' : '')],
-        ['Contact Name:', recordData.username || '', 'Mobile :', recordData.mobileNumber || '']
+    const generalRows = [
+        ['1', 'purpose for which valuation is made', pdfData.valuationPurpose || ''],
+        ['2', '(a) Date of inspection', pdfData.inspectionDate || ''],
+        ['', '(b) Date on which valuation is made', pdfData.valuationMadeDate || ''],
+        ['', 'List of documents produced for pursuit', ''],
+        ['', '(1) Mortgage Deed :', pdfData.mortgageDeed || ''],
+        ['', '(2) Mortgage Deed Between :', pdfData.mortgageDeedBetween || ''],
+        ['3', '(3) Previous Valuation Report:', pdfData.previousValuationReport || ''],
+        ['', '(4) Previous Valuation Report In Favor of:', pdfData.previousValuationInFavorOf || ''],
+        ['', '(5) Approved Plan No:', pdfData.approvedPlanNo || ''],
+        ['4', 'Name of the Owner/Applicant:', pdfData.ownerName || ''],
+        ['5', 'Brief description of Property', pdfData.locationOfProperty || ''],
+        ['', 'Location of the property', ''],
+        ['', '(a) Plot No/Survey No/Block No', pdfData.plotSurveyBlockNo || ''],
+        ['', '(b) Door/Shop No', pdfData.doorShopNo || ''],
+        ['', '(c) TP Np/Village', pdfData.tpVillage || ''],
+        ['', '(d) Ward/Taluka', pdfData.wardTaluka || ''],
+        ['', '(e) Mandal/District', pdfData.mandalDistrict || ''],
+        ['', '(f) Date of issue & Validity of layout plan', pdfData.layoutPlanIssueDate || ''],
+        ['', '(g) Approved map/plan issuing authority', pdfData.approvedMapAuthority || ''],
+        ['', '(h) weather genuineness or authenticity of approved map/plan verified', pdfData.authenticityVerified || ''],
+        ['', '(i) Any other comments by valuer on authentic of approved plan', pdfData.valuerCommentOnAuthenticity || ''],
+        ['7', 'Postal address of the property', pdfData.postalAddress || ''],
+        ['', 'City/Town', pdfData.cityTown || ''],
+        ['8', 'Residential Area', pdfData.residentialArea || ''],
+        ['', 'Commercial Area', pdfData.commercialArea || ''],
+        ['', 'Industrial Area', pdfData.industrialArea || '']
     ];
 
-    // Draw table manually to match original format
-    const colWidths = [35, 45, 35, 45];
-    const rowHeight = 6;
-
-    requestData.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * rowHeight);
-
-        // Draw borders
-        doc.setDrawColor(...borderColor);
-        doc.setLineWidth(0.1);
-        doc.line(margin, rowY, margin + 160, rowY);
-        doc.line(margin, rowY + rowHeight, margin + 160, rowY + rowHeight);
-        doc.line(margin, rowY, margin, rowY + rowHeight);
-        doc.line(margin + colWidths[0], rowY, margin + colWidths[0], rowY + rowHeight);
-        doc.line(margin + colWidths[0] + colWidths[1], rowY, margin + colWidths[0] + colWidths[1], rowY + rowHeight);
-        doc.line(margin + colWidths[0] + colWidths[1] + colWidths[2], rowY, margin + colWidths[0] + colWidths[1] + colWidths[2], rowY + rowHeight);
-        doc.line(margin + 160, rowY, margin + 160, rowY + rowHeight);
-
-        // Add text
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...textColor);
-
-        doc.text(row[0], margin + 2, rowY + 4);
-        const val1 = doc.splitTextToSize(row[1], colWidths[0] - 4);
-        doc.text(val1, margin + colWidths[0] + 2, rowY + 4);
-        doc.text(row[2], margin + colWidths[0] + colWidths[1] + 2, rowY + 4);
-        const val3 = doc.splitTextToSize(row[3], colWidths[2] - 4);
-        doc.text(val3, margin + colWidths[0] + colWidths[1] + colWidths[2] + 2, rowY + 4);
+    generalRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 8);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
     });
 
-    yPosition += (requestData.length * rowHeight) + 8;
+    // Classification section
+    yPosition = checkPageBreak(yPosition, 15);
+    yPosition = addSectionHeader('Classification Of The Area', yPosition);
 
-    // PROPERTY ADDRESS Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PROPERTY ADDRESS', margin, yPosition);
-    yPosition += 6;
-
-    const propertyData = [
-        ['Property Address:', recordData.address || '', 'Location:', recordData.location || ''],
-        ['Legal Address:', recordData.address || '', 'City:', recordData.city || ''],
-        ['', '', 'State:', 'India'],
-        ['', '', 'Nearby Landmark:', recordData.nearbyLandmark || ''],
-        ['', '', 'Collateral ID:', recordData.uniqueId ? recordData.uniqueId.substring(0, 30) : '']
+    const classificationRows = [
+        ['', '(a) High/Middle/Poor', pdfData.classificationArea || ''],
+        ['', '(b) Urban/Semi Urban/Rural', pdfData.urbanType || ''],
+        ['', 'Coming under Corporation limits/Village Panchayat/Municipality', pdfData.underCorporation || ''],
+        ['', 'Weather covered under any State/Central Govt.enactments', pdfData.govtEnactmentCover || ''],
+        ['', 'Boundaries of the property', ''],
+        ['', 'East', pdfData.boundariesDocument?.east || ''],
+        ['', 'West', pdfData.boundariesDocument?.west || ''],
+        ['', 'North', pdfData.boundariesDocument?.north || ''],
+        ['', 'South', pdfData.boundariesDocument?.south || '']
     ];
 
-    propertyData.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * rowHeight);
-
-        // Draw borders
-        doc.setDrawColor(...borderColor);
-        doc.setLineWidth(0.1);
-        doc.line(margin, rowY, margin + 160, rowY);
-        doc.line(margin, rowY + rowHeight, margin + 160, rowY + rowHeight);
-        doc.line(margin, rowY, margin, rowY + rowHeight);
-        doc.line(margin + colWidths[0], rowY, margin + colWidths[0], rowY + rowHeight);
-        doc.line(margin + colWidths[0] + colWidths[1], rowY, margin + colWidths[0] + colWidths[1], rowY + rowHeight);
-        doc.line(margin + colWidths[0] + colWidths[1] + colWidths[2], rowY, margin + colWidths[0] + colWidths[1] + colWidths[2], rowY + rowHeight);
-        doc.line(margin + 160, rowY, margin + 160, rowY + rowHeight);
-
-        // Add text
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-
-        if (row[0]) doc.text(row[0], margin + 2, rowY + 4);
-        if (row[1]) {
-            const addressLines = doc.splitTextToSize(row[1], colWidths[1] - 4);
-            doc.text(addressLines, margin + colWidths[0] + 2, rowY + 4);
-        }
-        if (row[2]) doc.text(row[2], margin + colWidths[0] + colWidths[1] + 2, rowY + 4);
-        if (row[3]) {
-            const valueLines = doc.splitTextToSize(row[3], colWidths[3] - 4);
-            doc.text(valueLines, margin + colWidths[0] + colWidths[1] + colWidths[2] + 2, rowY + 4);
-        }
+    classificationRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 8);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
     });
 
-    yPosition += (propertyData.length * rowHeight) + 8;
+    // Extent of Site
+    yPosition = checkPageBreak(yPosition, 18);
+    yPosition = addSectionHeader('Extent of The Site', yPosition);
 
-    // PROPERTY DETAILS Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PROPERTY DETAILS', margin, yPosition);
-    yPosition += 6;
-
-    const propertyDetails = [
-        ['Type Of Property:', recordData.typeOfProperty || '', 'Plot Demarcated At Site:', recordData.plotDemarcated || ''],
-        ['Approved Land Use:', recordData.approvedLandUse || '', 'Infrastructure Of The Surrounding Area:', recordData.infrastructure || ''],
-        ['No of Floors:', recordData.numberOfFloors || '', 'Class Of Locality:', recordData.classOfLocality || ''],
-        ['Carpet Area Measured:', recordData.carpetAreaMeasured || '', 'Property Location:', recordData.location || ''],
-        ['Nature of Location:', recordData.natureOfLocation || '', 'Distance Travelled From Operating', recordData.distanceTravelled || ''],
-        ['Green Housing:', recordData.greenHousing || '', 'Distance from City Center Kin:', recordData.distanceFromCityCenter || ''],
-        ['Report Condition:', recordData.reportCondition || recordData.status || '', '', '']
+    const extentRows = [
+        ['', 'Built Up Area (Sq.mt.):', pdfData.builtUpArea || ''],
+        ['', 'Carpet Area (Sq.mt.):', pdfData.carpetArea || ''],
+        ['', 'UDSL (Sq.Mt.):', pdfData.udsLand || ''],
+        ['', 'Latitude,Longitude & Co ordinates of flat', pdfData.latitudeLongitude || '']
     ];
 
-    propertyDetails.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * rowHeight);
-
-        // Draw borders
-        doc.setDrawColor(...borderColor);
-        doc.setLineWidth(0.1);
-        doc.line(margin, rowY, margin + 160, rowY);
-        doc.line(margin, rowY + rowHeight, margin + 160, rowY + rowHeight);
-        doc.line(margin, rowY, margin, rowY + rowHeight);
-        doc.line(margin + colWidths[0], rowY, margin + colWidths[0], rowY + rowHeight);
-        doc.line(margin + colWidths[0] + colWidths[1], rowY, margin + colWidths[0] + colWidths[1], rowY + rowHeight);
-        doc.line(margin + colWidths[0] + colWidths[1] + colWidths[2], rowY, margin + colWidths[0] + colWidths[1] + colWidths[2], rowY + rowHeight);
-        doc.line(margin + 160, rowY, margin + 160, rowY + rowHeight);
-
-        // Add text
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-
-        doc.text(row[0], margin + 2, rowY + 4);
-        doc.text(row[1], margin + colWidths[0] + 2, rowY + 4);
-        doc.text(row[2], margin + colWidths[0] + colWidths[1] + 2, rowY + 4);
-        if (row[3]) doc.text(row[3], margin + colWidths[0] + colWidths[1] + colWidths[2] + 2, rowY + 4);
+    extentRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 8);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
     });
 
-    yPosition += (propertyDetails.length * rowHeight) + 8;
+    // Extent of Site Considered for valuation
+    yPosition = checkPageBreak(yPosition, 10);
+    yPosition = addSectionHeader('Extent of the Site Considered for valuation', yPosition);
+    yPosition = addTableRow('', 'Carpet Area (Sq.mt.):', pdfData.siteConsideredArea || '', yPosition);
 
-    // UNIT DETAILS Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('UNIT DETAILS', margin, yPosition);
-    yPosition += 6;
-
-    // First table for room details
-    const unitHeaders = ['Details', 'No. of Rooms', 'No. of Kitchens', 'No of Bathrooms', 'Usages & Remark'];
-    const unitData = [
-        ['Ground Floor', recordData.groundFloorRooms || '', recordData.groundFloorKitchens || '', recordData.groundFloorBathrooms || '', recordData.groundFloorUsage || ''],
-        ['First Floor', recordData.firstFloorRooms || '', recordData.firstFloorKitchens || '', recordData.firstFloorBathrooms || '', recordData.firstFloorUsage || ''],
-        ['Second Floor', recordData.secondFloorRooms || '', recordData.secondFloorKitchens || '', recordData.secondFloorBathrooms || '', recordData.secondFloorUsage || ''],
-        ['Other1', recordData.other1Rooms || '', recordData.other1Kitchens || '', recordData.other1Bathrooms || '', recordData.other1Usage || ''],
-        ['Other2', recordData.other2Rooms || '', recordData.other2Kitchens || '', recordData.other2Bathrooms || '', recordData.other2Usage || '']
-    ];
-
-    const unitColWidths = [30, 25, 25, 25, 55];
-
-    // Draw unit details table headers with light gray background
-    unitHeaders.forEach((header, colIndex) => {
-        const xPos = margin + unitColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-        doc.setFillColor(...lightGray);
-        doc.rect(xPos, yPosition, unitColWidths[colIndex], rowHeight, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.rect(xPos, yPosition, unitColWidths[colIndex], rowHeight);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(header, xPos + 2, yPosition + 4);
-    });
-
-    // Draw unit details table data
-    unitData.forEach((row, rowIndex) => {
-        const rowY = yPosition + ((rowIndex + 1) * rowHeight);
-        row.forEach((cell, colIndex) => {
-            const xPos = margin + unitColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-            doc.setDrawColor(...borderColor);
-            doc.rect(xPos, rowY, unitColWidths[colIndex], rowHeight);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(cell, xPos + 2, rowY + 4);
-        });
-    });
-
-    yPosition += ((unitData.length + 1) * rowHeight) + 6;
-
-    // Second table for structure details
-    const structureHeaders = ['Structure', 'Occupancy Status', 'Occupied By', 'Approx. Property Age'];
-    const structureData = [
-        [recordData.structureType || '', recordData.occupancyStatus || '', recordData.occupiedBy || '', recordData.propertyAge || '']
-    ];
-
-    const structureColWidths = [40, 30, 30, 60];
-
-    // Structure table headers
-    structureHeaders.forEach((header, colIndex) => {
-        const xPos = margin + structureColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-        doc.setFillColor(...lightGray);
-        doc.rect(xPos, yPosition, structureColWidths[colIndex], rowHeight, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.rect(xPos, yPosition, structureColWidths[colIndex], rowHeight);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(header, xPos + 2, yPosition + 4);
-    });
-
-    // Structure table data
-    structureData.forEach((row, rowIndex) => {
-        const rowY = yPosition + ((rowIndex + 1) * rowHeight);
-        row.forEach((cell, colIndex) => {
-            const xPos = margin + structureColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-            doc.setDrawColor(...borderColor);
-            doc.rect(xPos, rowY, structureColWidths[colIndex], rowHeight);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(cell, xPos + 2, rowY + 4);
-        });
-    });
-
-    yPosition += ((structureData.length + 1) * rowHeight) + 6;
-
-    // Third table for maintenance details
-    const maintenanceHeaders = ['Maintenance Level', 'Occupied Since', 'Relationship of Occupant', 'Residual Age Of Property'];
-    const maintenanceData = [
-        [recordData.maintenanceLevel || '', recordData.occupiedSince || '', recordData.relationshipOfOccupant || '', recordData.residualAge || '']
-    ];
-
-    const maintenanceColWidths = [40, 30, 45, 45];
-
-    // Maintenance table headers
-    maintenanceHeaders.forEach((header, colIndex) => {
-        const xPos = margin + maintenanceColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-        doc.setFillColor(...lightGray);
-        doc.rect(xPos, yPosition, maintenanceColWidths[colIndex], rowHeight, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.rect(xPos, yPosition, maintenanceColWidths[colIndex], rowHeight);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(header, xPos + 2, yPosition + 4);
-    });
-
-    // Maintenance table data
-    maintenanceData.forEach((row, rowIndex) => {
-        const rowY = yPosition + ((rowIndex + 1) * rowHeight);
-        row.forEach((cell, colIndex) => {
-            const xPos = margin + maintenanceColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-            doc.setDrawColor(...borderColor);
-            doc.rect(xPos, rowY, maintenanceColWidths[colIndex], rowHeight);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(cell, xPos + 2, rowY + 4);
-        });
-    });
-
-    yPosition += ((maintenanceData.length + 1) * rowHeight) + 8;
-
-    // BOUNDARIES ON SITE Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BOUNDARIES ON SITE', margin, yPosition);
-    yPosition += 6;
-
-    const boundariesHeaders = ['', 'East', 'West', 'North', 'South'];
-    const boundariesData = [
-        ['As per Sale Deed', recordData.saleDeadEast || '', recordData.saleDeadWest || '', recordData.saleDeadNorth || '', recordData.saleDeadSouth || ''],
-        ['Actual on Site', recordData.directions?.east1 || '', recordData.directions?.west1 || '', recordData.directions?.north1 || '', recordData.directions?.south1 || '']
-    ];
-
-    const boundariesColWidths = [40, 30, 30, 30, 30];
-
-    // Boundaries table headers
-    boundariesHeaders.forEach((header, colIndex) => {
-        const xPos = margin + boundariesColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-        doc.setFillColor(...lightGray);
-        doc.rect(xPos, yPosition, boundariesColWidths[colIndex], rowHeight, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.rect(xPos, yPosition, boundariesColWidths[colIndex], rowHeight);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(header, xPos + 2, yPosition + 4);
-    });
-
-    // Boundaries table data
-    boundariesData.forEach((row, rowIndex) => {
-        const rowY = yPosition + ((rowIndex + 1) * rowHeight);
-        row.forEach((cell, colIndex) => {
-            const xPos = margin + boundariesColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-            doc.setDrawColor(...borderColor);
-            doc.rect(xPos, rowY, boundariesColWidths[colIndex], rowHeight);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            if (colIndex === 0) doc.setFont('helvetica', 'bold');
-            doc.text(cell, xPos + 2, rowY + 4);
-            if (colIndex === 0) doc.setFont('helvetica', 'normal');
-        });
-    });
-
-    // Page footer for page 1
-    const footerY = doc.internal.pageSize.getHeight() - 10;
-    doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${recordData.uniqueId || 'HRQ-22-88157'}/77`, pageWidth - 20, footerY);
-    doc.text('Page -1-', pageWidth - 30, footerY - 5);
+    // Weather Occupied
+    yPosition = checkPageBreak(yPosition, 8);
+    yPosition = addSectionHeader('Weather Occupied by owner/tenant? If occupied by tenant,science how long? Rent received per month', yPosition);
+    yPosition = addTableRow('', 'Status:', pdfData.occupancyStatus || '', yPosition);
 
     // ===== PAGE 2 =====
     doc.addPage();
-    yPosition = 10;
+    addLetterhead();
+    yPosition = 35;
 
-    // NDMA Details Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...textColor);
-    doc.text('NDMA Details', margin, yPosition);
-    yPosition += 8;
+    // APARTMENT BUILDING
+    yPosition = addSectionHeader('II.APARTMENT BUILDING', yPosition);
 
-    const ndmaData = [
-        ['Height Of Building(Above Ground Level)', recordData.buildingHeight || '', 'Seismic Zone', recordData.coordinates?.latitude || ''],
-        ['Flood Prone Area', recordData.floodProneArea || '', 'CRZ', recordData.coordinates?.longitude || '']
-    ];
+    const apartmentRows = [
+         ['1', 'Nature of Apartment', pdfData.apartmentNature || ''],
+         ['2', 'Location', pdfData.apartmentLocation || ''],
+         ['', 'Survey/Block No.', pdfData.surveyBlockNo || ''],
+         ['', 'TP, FP  No.', pdfData.tpFpNo || ''],
+         ['', 'Village/Municipality/Corporation', pdfData.villageMunicipality || ''],
+         ['', 'Door No,Street or Road (Pin Code)', pdfData.doorStreet || ''],
+         ['3', 'Description of the locality', pdfData.localityDescription || ''],
+         ['', 'Residential/Commercial/Mixed', pdfData.areaUsage || ''],
+         ['4', 'Commencement Year of construction', pdfData.constructionYear || ''],
+         ['5', 'Number of Floor', pdfData.numberOfFloors || ''],
+         ['6', 'Type Of Structure', pdfData.structureType || ''],
+         ['7', 'Number of Dwelling units in the building', pdfData.dwellingUnits || ''],
+         ['8', 'Quality of Construction', pdfData.qualityOfConstruction || ''],
+         ['9', 'Appearance of the building', pdfData.buildingAppearance || ''],
+         ['10', 'Maintenance of building', pdfData.buildingMaintenance || ''],
+         ['11', 'Facilities Available', ''],
+         ['', 'Lift', pdfData.facilities?.lift ? 'Yes' : ''],
+         ['', 'Protected Water Supply', pdfData.facilities?.waterSupply ? 'Yes' : ''],
+         ['', 'Under ground sewerage', pdfData.facilities?.sewerage ? 'Yes' : ''],
+         ['', 'car parking-Open/Covered', pdfData.facilities?.parking ? 'Yes' : ''],
+         ['', 'is compound wall Existing?', pdfData.facilities?.compoundWall ? 'Yes' : ''],
+         ['', 'Is pavement laid around the building?', pdfData.facilities?.pavement ? 'Yes' : '']
+     ];
 
-    ndmaData.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * rowHeight);
-        doc.setDrawColor(...borderColor);
-        doc.setLineWidth(0.1);
-        doc.line(margin, rowY, margin + 160, rowY);
-        doc.line(margin, rowY + rowHeight, margin + 160, rowY + rowHeight);
-        doc.line(margin, rowY, margin, rowY + rowHeight);
-        doc.line(margin + 40, rowY, margin + 40, rowY + rowHeight);
-        doc.line(margin + 80, rowY, margin + 80, rowY + rowHeight);
-        doc.line(margin + 120, rowY, margin + 120, rowY + rowHeight);
-        doc.line(margin + 160, rowY, margin + 160, rowY + rowHeight);
-        
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(row[0], margin + 2, rowY + 4);
-        doc.text(row[1], margin + 42, rowY + 4);
-        doc.text(row[2], margin + 82, rowY + 4);
-        doc.text(row[3], margin + 122, rowY + 4);
+    apartmentRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 8);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
     });
 
-    yPosition += (ndmaData.length * rowHeight) + 8;
+    // FLAT section
+    yPosition = checkPageBreak(yPosition, 20);
+    yPosition = addSectionHeader('III. Flat', yPosition);
 
-    // VALUATION AS PER GOVT. APPROVED RATES Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('VALUATION AS PER GOVT. APPROVED RATES', margin, yPosition);
-    yPosition += 6;
-
-    const govtRatesData = [
-        ['Land/Build up/Soleable Area:', recordData.landArea || '', 'Constructed Area:', recordData.constructedArea || ''],
-        ['Land/Build up/Soleable Rate:', recordData.landRate || '', 'Constructed Rate :', recordData.constructedRate || ''],
-        ['Total Value :', recordData.totalValue || '', 'Floorwise Usage:', recordData.floorwiseUsage || '']
+    const flatRows = [
+        ['1', 'The floor on which the Flat is situated', pdfData.flatFloor || ''],
+        ['2', 'Door No. Of the Flat', pdfData.flatDoorNo || ''],
+        ['3', 'Specification of the Flat', pdfData.flatSpecifications?.specifications || ''],
+        ['', 'Roof', pdfData.flatSpecifications?.roof || ''],
+        ['', 'Flooring', pdfData.flatSpecifications?.flooring || ''],
+        ['', 'Doors', pdfData.flatSpecifications?.doors || ''],
+        ['', 'Windows', pdfData.flatSpecifications?.windows || ''],
+        ['', 'Fittings', pdfData.flatSpecifications?.fittings || ''],
+        ['', 'Finishing', pdfData.flatSpecifications?.finishing || ''],
+        ['4', 'House Tax', ''],
+        ['', 'Assessment no', pdfData.houseTax?.assessmentNo || ''],
+        ['', 'Tax paid in the name of', pdfData.houseTax?.taxPaidBy || ''],
+        ['', 'Tax amount', pdfData.houseTax?.taxAmount || ''],
+        ['5', 'Electricity service connection no.', pdfData.electricityConnection?.connectionNo || ''],
+        ['', 'Meter card is in name of', pdfData.electricityConnection?.meterName || ''],
+        ['6', 'How is the maintenance of the Flat?', pdfData.flatMaintenance || ''],
+        ['7', 'Sale Deed In the name of', pdfData.saleDeedName || ''],
+        ['8', 'What is the undivided area of land as per sale deed? (sq.MT.)', pdfData.undividedLandArea || ''],
+        ['9', 'What is the plinth area of the Flat ?', ''],
+        ['', 'Built Up Area (Sq.mt.):', pdfData.plinthArea || ''],
+        ['', 'Carpet Area (Sq.mt.):', pdfData.carpetAreaFlat || ''],
+        ['10', 'What is the FSI?', pdfData.fsi || ''],
+        ['11', 'What is the Carpet Area of the Flat consider for valuation?', pdfData.carpetAreaValuation || ''],
+        ['12', 'Is it posh/ I class/Medium / Ordinary', pdfData.flatClass || ''],
+        ['13', 'Is it being used for residential or commercial purpose?', pdfData.usage || ''],
+        ['14', 'Is it it owner occupied or Rent out?', pdfData.occupancy || ''],
+        ['15', 'If rented ,what is the monthly rent?', pdfData.rent || '']
     ];
 
-    govtRatesData.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * rowHeight);
-        doc.setDrawColor(...borderColor);
-        doc.line(margin, rowY, margin + 160, rowY);
-        doc.line(margin, rowY + rowHeight, margin + 160, rowY + rowHeight);
-        doc.line(margin, rowY, margin, rowY + rowHeight);
-        doc.line(margin + 60, rowY, margin + 60, rowY + rowHeight);
-        doc.line(margin + 100, rowY, margin + 100, rowY + rowHeight);
-        doc.line(margin + 160, rowY, margin + 160, rowY + rowHeight);
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(row[0], margin + 2, rowY + 4);
-        doc.text(row[1], margin + 62, rowY + 4);
-        doc.text(row[2], margin + 102, rowY + 4);
-        doc.text(row[3], margin + 142, rowY + 4);
+    flatRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 8);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
     });
 
-    yPosition += (govtRatesData.length * rowHeight) + 8;
+    // MARKETABILITY section
+    yPosition = checkPageBreak(yPosition, 12);
+    yPosition = addSectionHeader('IV MARKETIBILITY', yPosition);
 
-    // VALUATION Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('VALUATION', margin, yPosition);
-    yPosition += 6;
-
-    const valuationHeaders = ['Description', 'Area in Sq.Ft', 'Rate/Sq.Ft', 'Amount (R)'];
-    const valuationData = [
-        ['Landarea', recordData.landAreaSqFt || '', recordData.landRateSqFt || '', recordData.landAmount || ''],
-        ['Carpet Area', recordData.carpetAreaSqFt || '', recordData.carpetRateSqFt || '', recordData.carpetAmount || ''],
-        ['Super Built Up/Sellable Area', recordData.superBuiltAreaSqFt || '', recordData.superBuiltRateSqFt || '', recordData.superBuiltAmount || ''],
-        ['Other 1', recordData.other1AreaSqFt || '', recordData.other1RateSqFt || '', recordData.other1Amount || ''],
-        ['Other 2', recordData.other2AreaSqFt || '', recordData.other2RateSqFt || '', recordData.other2Amount || ''],
-        ['% Completion', recordData.percentCompletion || '', 'TOTAL', recordData.totalAmount || ''],
-        ['% Recommended', recordData.percentRecommended || '', 'Realizable Value:', recordData.realizableValue || '']
+    const marketabilityRows = [
+        ['1', 'How is marketability?', pdfData.marketability || ''],
+        ['2', 'What are the factors favouring for an extra potential value?', pdfData.positiveFactors || ''],
+        ['3', 'Any negative factors are observed which affect the market value in general?', pdfData.negativeFactors || '']
     ];
 
-    const valuationColWidths = [60, 30, 30, 40];
+    marketabilityRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 8);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
+    });
 
-    // Valuation table headers
-    valuationHeaders.forEach((header, colIndex) => {
-        const xPos = margin + valuationColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-        doc.setFillColor(...lightGray);
-        doc.rect(xPos, yPosition, valuationColWidths[colIndex], rowHeight, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.rect(xPos, yPosition, valuationColWidths[colIndex], rowHeight);
-        doc.setFontSize(8);
+    // RATE section
+    yPosition = checkPageBreak(yPosition, 15);
+    yPosition = addSectionHeader('V RATE', yPosition);
+
+    const rateRows = [
+        ['1', 'After analysing the comparable sale instances, what is the composite rate for a similar flat with same specifications in the adjoining locality?', pdfData.compositeRate || ''],
+        ['2', 'Assuming it is a new construction, what is the adopted basic composite rate of the flat under valuation after comparing with the specifications and other factors with the flat under comparison', pdfData.basicCompositeRate || ''],
+        ['3', 'Break up for the rate', ''],
+        ['', '(i) Building + Services', pdfData.buildingServiceRate || ''],
+        ['', '(ii) Land+Others', pdfData.landOtherRate || ''],
+        ['4', 'Guideline rate obtained from the Registrar\'s office', ''],
+        ['', 'Per Sq. Mt.', pdfData.jantriRate || ''],
+        ['', 'Total Jantri Value', pdfData.totalJantriValue || '']
+    ];
+
+    rateRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 10);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
+    });
+
+    // COMPOSITE RATE section
+    yPosition = checkPageBreak(yPosition, 20);
+    yPosition = addSectionHeader('VI COMPOSITE RATE ADOPTED AFTER DEPRECIATION', yPosition);
+
+    const compositeRows = [
+        ['a', 'Depreciated building rate', pdfData.depreciatedBuildingRate || ''],
+        ['', 'Replacement cost of Flat with services', pdfData.replacementCost || ''],
+        ['', 'Age of the building', pdfData.buildingAge || ''],
+        ['', 'Life of the building estimated', pdfData.buildingLife || ''],
+        ['', 'Depreciation % assuming the salvage value as 10%', pdfData.depreciationPercentage || ''],
+        ['', 'Depreciated ratio of the building', pdfData.depreciatedRatio || ''],
+        ['b', 'Total Composite rate arrived for valuation', pdfData.finalCompositeRate || ''],
+        ['', 'Depreciated building rate VI (a)', pdfData.depreciatedBuildingRate || ''],
+        ['', 'rate of land & Other VI (3) ii', pdfData.landOtherRate || ''],
+        ['', 'Total Composite rate', pdfData.finalCompositeRate || '']
+    ];
+
+    compositeRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 10);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
+    });
+
+    // DETAILS OF VALUATION
+    yPosition = checkPageBreak(yPosition, 18);
+    yPosition = addSectionHeader('DETAILS OF VALUATION', yPosition);
+
+    // Table header for valuation details
+    const valCol1 = 12, valCol2 = 65, valCol3 = 45, valCol4 = 48;
+    const headers = ['No.', 'DESCRIPTION', 'Area in Sq. mt.', 'RATE'];
+    const headerWidths = [valCol1, valCol2, valCol3, valCol4];
+    let xPos = margin;
+
+    doc.setFillColor(...headerBgColor);
+    headerWidths.forEach((width, idx) => {
+        drawCell(xPos, yPosition, width, baseRowHeight);
+        doc.rect(xPos, yPosition, width, baseRowHeight, 'F');
+        drawCell(xPos, yPosition, width, baseRowHeight);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text(header, xPos + 2, yPosition + 4);
+        doc.setTextColor(0, 0, 0);
+        doc.text(headers[idx], xPos + 1, yPosition + 3.5);
+        xPos += width;
     });
+    yPosition += baseRowHeight;
 
-    // Valuation table data
-    valuationData.forEach((row, rowIndex) => {
-        const rowY = yPosition + ((rowIndex + 1) * rowHeight);
-        row.forEach((cell, colIndex) => {
-            const xPos = margin + valuationColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-            doc.setDrawColor(...borderColor);
-            doc.rect(xPos, rowY, valuationColWidths[colIndex], rowHeight);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(cell, xPos + 2, rowY + 4);
+    // Valuation rows
+    const valuationRows = [
+        ['1', 'Present value of the Flat - Carpet Area', pdfData.carpetAreaValuation || '', pdfData.presentValue || ''],
+        ['', '', 'Value Of The Flat', pdfData.presentValue || ''],
+        ['2', 'Fixed Furniture & Fixtures', '', pdfData.furnitureFixtureValue || ''],
+        ['', 'Total Value Of The Flat', '', pdfData.totalValue || '']
+    ];
+
+    valuationRows.forEach(row => {
+        xPos = margin;
+        headerWidths.forEach((width, idx) => {
+            const cellText = row[idx] || '';
+            const cellLines = getTextLines(cellText, width);
+            const rowHeight = Math.max(baseRowHeight, cellLines.length * 3.5 + 2);
+            drawCell(xPos, yPosition, width, rowHeight);
+            drawCellText(cellLines.join('\n'), xPos, yPosition, width, rowHeight, false);
+            xPos += width;
         });
+        yPosition += baseRowHeight;
     });
 
-    yPosition += ((valuationData.length + 1) * rowHeight) + 6;
+    // In Words
+    yPosition = addTableRow('', 'In Words Fifty Nine Lac Fifty One Thousand Four Hundred & Ninety Nine Rupees Only.', '', yPosition);
 
-    // Realizable Value
+    // Appraisal values section
+    yPosition = checkPageBreak(yPosition, 18);
+    yPosition = addSectionHeader('As a result of my appraisal and analysis,', yPosition);
+
+    const appraisalRows = [
+        ['', 'Fair Market Market Value', pdfData.fairMarketValue || ''],
+        ['', 'Realizable Value 95% of M.V', pdfData.realizableValue || ''],
+        ['', 'Distress value 80% of M.V', pdfData.distressValue || ''],
+        ['', 'Sale Deed Value', pdfData.saleDeedValue || ''],
+        ['', 'Jantri Value', pdfData.totalJantriValue || ''],
+        ['', 'Insurable Value', pdfData.insurableValue || ''],
+        ['', 'Remarks: Rate is given on Carpet Area.', '']
+    ];
+
+    appraisalRows.forEach(row => {
+        yPosition = checkPageBreak(yPosition, 10);
+        yPosition = addTableRow(row[0], row[1], row[2], yPosition);
+    });
+
+    // Copy of document
+    yPosition = addTableRow('', 'Copy Of Document Shown To Us', 'Mortgage Deed, Approved Plan, Previous Valuation Report', yPosition);
+
+    // STATEMENT OF LIMITING CONDITIONS
+    yPosition = checkPageBreak(yPosition, 30);
     doc.setFontSize(8);
-    doc.text('Realizable Value in Words : Rupees', margin, yPosition);
-    yPosition += 10;
-
-    // Visited By and Violations
-    doc.text('Visited By:', margin, yPosition);
-    yPosition += 4;
-    doc.text('Violations observed (if any):', margin, yPosition);
-    yPosition += 4;
-    doc.text('Not Applicable As Plan And Permission Is Not Provided', margin, yPosition);
-    yPosition += 8;
-
-    // Remarks
-    doc.text('Remarks:', margin, yPosition);
-    yPosition += 4;
-    const remarks = recordData.remarks || 'null | 1 documents provided are registered release deed property card 2 plot area considered as per registered release deed and built up area as per on site measurement 3 plan and permission not available hence technical violation indemnity is required';
-    const remarksLines = doc.splitTextToSize(remarks, 160);
-    doc.text(remarksLines, margin, yPosition);
-    yPosition += (remarksLines.length * 4) + 8;
-    
-    // Additional Info Section
-    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('ADDITIONAL INFORMATION', margin, yPosition);
+    doc.setTextColor(0, 0, 255);
+    doc.text('STATEMENT OF LIMITING CONDITIONS', margin, yPosition);
     yPosition += 4;
-    
-    const additionalInfo = [
-        ['Submitted By:', recordData.username || ''],
-        ['Status:', recordData.status || ''],
-        ['Collection Status:', recordData.payment === 'yes' ? 'Collected' : (recordData.payment === 'no' ? 'Not Collected' : '')],
-        ['Collected By:', recordData.collectedBy || ''],
-        ['Date & Time:', recordData.dateTime || ''],
-        ['Manager Feedback:', recordData.managerFeedback || '']
-    ];
-    
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    additionalInfo.forEach((item, index) => {
-        const itemYPos = yPosition + (index * 4);
-        doc.text(item[0], margin + 2, itemYPos);
-        const infoLines = doc.splitTextToSize(item[1], 140);
-        doc.text(infoLines, margin + 40, itemYPos);
-    });
-    
-    yPosition += (additionalInfo.length * 4) + 4;
 
-    // OMNI DOCS FILES
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('OMNI DOCS FILES', margin, yPosition);
-    yPosition += 6;
-
-    const omniHeaders = ['File Name', 'Latitude', 'Longitude', 'Go To Map'];
-    const omniData = [
-        [recordData.fileName || '', recordData.fileLatitude || '', recordData.fileLongitude || '', recordData.goToMap || '']
+    const limitingConditions = [
+        'If this property is offered for collateral security the concerned financial institution is requested to obtained latest title report from advocate of said property.',
+        'No responsibility is to be assumed for matter legal in nature nor is opinion of title rendered by this report, good title is assumed.',
+        'Scope of this report is only to access present market value of the property for specific purpose, date & place. It therefore varies with purpose, period, and location, identification of rightful owner of the property, genuineness of the title deed, encumbrance if any on the property etc. be examined by the (Financial Institution) concerned authority.',
+        'Possession of the any copy of this report does not carry with it the right of publication, nor any be used for any purpose by any one, except the addressee and the property owner, without the previous written consent of the appraiser, and in any event, only may be revealed in its entirety.',
+        'Credibility of buyer and seller is fully responsible of financial institute, identification of buyer & seller is from financial institute only.',
+        'If found any typo error in this report is not counted for any legal action and obligation.'
     ];
 
-    const omniColWidths = [60, 35, 35, 30];
-
-    // OMNI Docs table headers
-    omniHeaders.forEach((header, colIndex) => {
-        const xPos = margin + omniColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-        doc.setFillColor(...lightGray);
-        doc.rect(xPos, yPosition, omniColWidths[colIndex], rowHeight, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.rect(xPos, yPosition, omniColWidths[colIndex], rowHeight);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(header, xPos + 2, yPosition + 4);
-    });
-
-    // OMNI Docs table data
-    omniData.forEach((row, rowIndex) => {
-        const rowY = yPosition + ((rowIndex + 1) * rowHeight);
-        row.forEach((cell, colIndex) => {
-            const xPos = margin + omniColWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-            doc.setDrawColor(...borderColor);
-            doc.rect(xPos, rowY, omniColWidths[colIndex], rowHeight);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(cell, xPos + 2, rowY + 4);
-        });
-    });
-
-    // Page footer for page 2
-    const footerY2 = doc.internal.pageSize.getHeight() - 10;
-    doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${recordData.uniqueId || 'HRQ-22-88157'}/77`, pageWidth - 20, footerY2);
-    doc.text('Page -2-', pageWidth - 30, footerY2 - 5);
-
-    // ===== PAGE 3 =====
-    doc.addPage();
-    yPosition = 10;
-
-    // Approval Information
-    const approvalData = [
-        ['Entered By:', recordData.enteredBy || '', 'Recommended by:', recordData.recommendedBy || ''],
-        ['Entered On:', recordData.enteredOn || '', 'Recommender\'s Comment:', recordData.recommenderComment || ''],
-        ['Completion Status:', recordData.completionStatus || '', '', ''],
-        ['Approver Name:', recordData.approverName || '', 'Designation:', recordData.designation || ''],
-        ['Approver Recommendation :', recordData.approverRecommendation || '', 'Conditional Remark:', recordData.conditionalRemark || ''],
-        ['Approver\'s Comment:', recordData.approverComment || '', '', ''],
-        ['Approver ID:', recordData.approverId || '', 'Approved On :', recordData.approvedOn || '']
-    ];
-
-    approvalData.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * rowHeight);
-        doc.setDrawColor(...borderColor);
-        doc.line(margin, rowY, margin + 160, rowY);
-        doc.line(margin, rowY + rowHeight, margin + 160, rowY + rowHeight);
-        doc.line(margin, rowY, margin, rowY + rowHeight);
-        doc.line(margin + 40, rowY, margin + 40, rowY + rowHeight);
-        doc.line(margin + 80, rowY, margin + 80, rowY + rowHeight);
-        doc.line(margin + 120, rowY, margin + 120, rowY + rowHeight);
-        doc.line(margin + 160, rowY, margin + 160, rowY + rowHeight);
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        if (rowIndex === 3 || rowIndex === 6) doc.setFont('helvetica', 'bold');
-
-        doc.text(row[0], margin + 2, rowY + 4);
-        doc.text(row[1], margin + 42, rowY + 4);
-        doc.text(row[2], margin + 82, rowY + 4);
-        doc.text(row[3], margin + 122, rowY + 4);
-
-        doc.setFont('helvetica', 'normal');
-    });
-
-    yPosition += (approvalData.length * rowHeight) + 8;
-
-    // Image/Location Data
-    const locationData = [
-        ['Longitude:', recordData.longitude1 || '', 'Latitude:', recordData.latitude1 || '', 'Image Token:', recordData.imageToken1 || ''],
-        ['Longitude:', recordData.longitude2 || '', 'Latitude:', recordData.latitude2 || '', 'Image Token:', recordData.imageToken2 || ''],
-        ['Longitude:', recordData.longitude3 || '', 'Latitude:', recordData.latitude3 || '', 'Trading:', recordData.trading || ''],
-        ['Longitude:', recordData.longitude4 || '', 'Latitude:', recordData.latitude4 || '', 'Image Token:', recordData.imageToken4 || '']
-    ];
-
-    locationData.forEach((row, rowIndex) => {
-        const rowY = yPosition + (rowIndex * 5);
+    limitingConditions.forEach(condition => {
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
-
-        doc.text(row[0], margin, rowY);
-        doc.text(row[1], margin + 20, rowY);
-        doc.text(row[2], margin + 60, rowY);
-        doc.text(row[3], margin + 75, rowY);
-        doc.text(row[4], margin + 110, rowY);
-        doc.text(row[5], margin + 130, rowY);
+        doc.setTextColor(0, 0, 0);
+        const lines = doc.splitTextToSize(`• ${condition}`, pageWidth - 2 * margin - 3);
+        doc.text(lines, margin + 2, yPosition);
+        yPosition += (lines.length * 3.5) + 1;
+        yPosition = checkPageBreak(yPosition, 10);
     });
 
-    yPosition += (locationData.length * 5) + 10;
+    yPosition += 0.5;
 
-    // DECLARATION Section
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DECLARATION', margin, yPosition);
+    // VIII DECLARATION
+    yPosition = checkPageBreak(yPosition, 30);
+    yPosition = addSectionHeader('VIII DECLARATION', yPosition);
+    yPosition += 0.5;
+
+    const declarationItems = [
+        ['', 'I hereby declare that-'],
+        ['a', 'I declare that I am not associated with the builder or with any of his associate companies or with the borrower directly or indirectly in the past or in the present and this report has been prepared by me with highest professional integrity.'],
+        ['b', 'I further declare that I have personally inspected the site and building on 30th October, 2025.'],
+        ['c', 'I further declare that all the above particulars and information given in this report are true to the best of my knowledge and belief.'],
+        ['d', 'Future life of property is based on proper maintenance of the property']
+    ];
+
+    declarationItems.forEach(item => {
+        yPosition = checkPageBreak(yPosition, 10);
+        yPosition = addTableRow(item[0], item[1], '', yPosition);
+    });
+
+    yPosition += 1.5;
+
+    // Signature Section
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Place: ${pdfData.place || ''}`, margin, yPosition);
+    doc.text('SIGNATURE OF THE VALUER', pageWidth - 60, yPosition);
+    yPosition += 4;
+
+    doc.text(`Date: ${pdfData.signatureDate || ''}`, margin, yPosition);
+    doc.text(pdfData.signerName || '', pageWidth - 60, yPosition);
     yPosition += 6;
 
-    const declarationText = [
-        'I/We herby declare that: 1. The property was inspected by me/us. 2. I/We have no direct or indirect interest in the property valued 3. The information furnished above is true and correct to my/our knowledge.',
-        '',
-        'DISCALMER: ICICI Group is merely acting in the capacity of a valuer and does not undertake any responsibility for aspects other than valuation of property as mentioned in the report. All assistance is provided on a best effort basis only.',
-        'The valuation report ("Report") is based on the location of the property, infrastructure available, overall development of the vicinity and prevailing market rates for similar properties and on the facts and confirmation provided by the client ("Client") or his professional advisor or any other party on behalf of the Client as an date of assessment, which the Client represents to be complete and accurate in all respects. Report contains no representations or warranties of any kind. The Client should exercise appropriate due diligence with respect to the property, including approval status, legal and tax diligence, prior to taking of any decision. Compliance with statutory requirements applicable for construction is the responsibility of person undertaking the construction activity. ICICI Group does not have any role in construction and pricing of the project / Property.',
-        'ICICI Group has not undertaken any investigation into the title of the property and the valuation is made on the presumption that the property possesses a good and marketable title and is free from encumbrances.',
-        'The contents of this Report are strictly confidential and are intended for the exclusive use of the Client.This document may not be altered in any way, transmitted, copied or distributed, in part or in whole, to any other person or to the media or reproduced in any form, without prior written consent of ICICI Group. ICICI Group accepts no responsibility or liability to any third party for whole or any part of the Report.',
-        'ICICI Group specifically excludes any liability with respect to any losses incurred by the Client due to any act or omission of the developer or any other third party and any consequences thereof. ICICI Group\'s total aggregate liability to the Client for any reason, whatsoever, shall be limited to an aggregate sum not exceeding the total fees received by ICICI Group for this report. ICICI Group shall not be liable for any indirect or consequential losses which, arise out of or in connection with services provided under this engagement.'
-    ];
+    // Enclosure
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Encsd: 1. Declaration from the valuer`, margin, yPosition);
+    yPosition += 4;
 
+    // The undersigned text
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    const underSignedText = `The undersigned has inspected the property detailed in the Valuation report dated-${pdfData.reportDate || ''}. We are satisfied that the fair and reasonable market value of the property is Rs. ${pdfData.fairMarketValue || ''}/- (In Words ${pdfData.fairMarketValueWords || ''}).`;
+    const lines = doc.splitTextToSize(underSignedText, pageWidth - 2 * margin);
+    doc.text(lines, margin, yPosition);
+    yPosition += (lines.length * 3.5) + 5;
 
-    declarationText.forEach((paragraph, index) => {
-        const lines = doc.splitTextToSize(paragraph, 180);
-        doc.text(lines, margin, yPosition);
-        yPosition += (lines.length * 3) + 2;
-    });
-
-    // Page footer for page 3
-    const footerY3 = doc.internal.pageSize.getHeight() - 10;
-    doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${recordData.uniqueId || 'HRQ-22-88157'}/77`, pageWidth - 20, footerY3);
-    doc.text('Page -3-', pageWidth - 30, footerY3 - 5);
-
-    // ===== PAGE 4: DASHBOARD TABLE DATA =====
-    doc.addPage();
-    yPosition = 10;
-
-    // Dashboard header
-    doc.setFillColor(...darkBlue);
-    doc.rect(0, yPosition - 2, pageWidth, 6, 'F');
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text('DASHBOARD SUMMARY TABLE', margin, yPosition + 1);
-
-    yPosition += 10;
-    doc.setTextColor(...textColor);
-
-    // Dashboard Summary Data - Statistics Cards
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SUBMISSION STATISTICS', margin, yPosition);
-    yPosition += 5;
-
-    const statItems = [
-        ['Form ID:', recordData.uniqueId?.substring(0, 30) || ''],
-        ['Client Name:', recordData.clientName || ''],
-        ['Mobile Number:', recordData.mobileNumber || ''],
-        ['City:', recordData.city || ''],
-        ['Bank Name:', recordData.bankName || ''],
-        ['Engineer Name:', recordData.engineerName || ''],
-        ['Status:', recordData.status || ''],
-        ['Payment Status:', recordData.payment === 'yes' ? 'Collected' : (recordData.payment === 'no' ? 'Not Collected' : '')],
-        ['Created Date:', recordData.createdAt ? new Date(recordData.createdAt).toLocaleDateString() : ''],
-        ['Location:', recordData.location || ''],
-        ['Address:', recordData.address ? recordData.address.substring(0, 50) : ''],
-        ['DSA:', recordData.dsa || '']
-    ];
-
-    const statColWidth = [60, 110];
+    // Final Signature
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-
-    statItems.forEach((item, index) => {
-        const itemYPos = yPosition + (index * 5);
-        doc.setDrawColor(...borderColor);
-        doc.setLineWidth(0.1);
-
-        // Left cell (label)
-        doc.rect(margin, itemYPos, statColWidth[0], 5);
-        doc.setFont('helvetica', 'bold');
-        doc.text(item[0], margin + 2, itemYPos + 3.5);
-
-        // Right cell (value)
-        doc.rect(margin + statColWidth[0], itemYPos, statColWidth[1], 5);
-        doc.setFont('helvetica', 'normal');
-        const valueLines = doc.splitTextToSize(item[1], statColWidth[1] - 4);
-        doc.text(valueLines, margin + statColWidth[0] + 2, itemYPos + 3.5);
-    });
-
-    yPosition += (statItems.length * 5) + 8;
-
-    // Property and Valuation Details
-    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('PROPERTY & VALUATION DETAILS', margin, yPosition);
+    doc.text('SIGNATURE', pageWidth - 60, yPosition);
     yPosition += 5;
-
-    const propertyItems = [
-        ['Property Address:', recordData.address || ''],
-        ['Location:', recordData.location || ''],
-        ['Latitude:', recordData.coordinates?.latitude || ''],
-        ['Longitude:', recordData.coordinates?.longitude || ''],
-        ['Directions - North:', recordData.directions?.north1 || ''],
-        ['Directions - East:', recordData.directions?.east1 || ''],
-        ['Directions - South:', recordData.directions?.south1 || ''],
-        ['Directions - West:', recordData.directions?.west1 || ''],
-        ['Submitted Date:', recordData.dateTime || ''],
-        ['Day:', recordData.day || ''],
-        ['Manager Feedback:', recordData.managerFeedback || '']
-    ];
-
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-
-    propertyItems.forEach((item, index) => {
-        const itemYPos = yPosition + (index * 5);
-
-        // Check if we need a new page
-        if (itemYPos > pageHeight - 20) {
-            doc.addPage();
-            yPosition = 10;
-            const newItemYPos = yPosition + (index * 5);
-
-            // Left cell (label)
-            doc.rect(margin, newItemYPos, statColWidth[0], 5);
-            doc.setFont('helvetica', 'bold');
-            doc.text(item[0], margin + 2, newItemYPos + 3.5);
-
-            // Right cell (value)
-            doc.rect(margin + statColWidth[0], newItemYPos, statColWidth[1], 5);
-            doc.setFont('helvetica', 'normal');
-            const valueLines = doc.splitTextToSize(item[1], statColWidth[1] - 4);
-            doc.text(valueLines, margin + statColWidth[0] + 2, newItemYPos + 3.5);
-        } else {
-            // Left cell (label)
-            doc.rect(margin, itemYPos, statColWidth[0], 5);
-            doc.setFont('helvetica', 'bold');
-            doc.text(item[0], margin + 2, itemYPos + 3.5);
-
-            // Right cell (value)
-            doc.rect(margin + statColWidth[0], itemYPos, statColWidth[1], 5);
-            doc.setFont('helvetica', 'normal');
-            const valueLines = doc.splitTextToSize(item[1], statColWidth[1] - 4);
-            doc.text(valueLines, margin + statColWidth[0] + 2, itemYPos + 3.5);
-        }
-    });
-
-    yPosition += (propertyItems.length * 5) + 8;
-
-    // Page footer for page 4
-    const footerY4 = doc.internal.pageSize.getHeight() - 10;
     doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${recordData.uniqueId || 'HRQ-22-88157'}/77`, pageWidth - 20, footerY4);
-    doc.text('Page -4-', pageWidth - 30, footerY4 - 5);
+    doc.text('NAME OF BRANCH OFFICIAL WITH SEAL', pageWidth - 75, yPosition);
 
     // Save the PDF
-    const filename = `ICICI_Valuation_Report_${recordData.requestId || recordData.uniqueId || 'HRQ-22-88157'}.pdf`;
+    const filename = `Valuation_Report_${pdfData.formId || recordData.uniqueId || 'Report'}.pdf`;
     doc.save(filename);
 };
 

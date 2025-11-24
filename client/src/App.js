@@ -7,14 +7,21 @@ import LoginPage from "./pages/login";
 import DashboardPage from "./pages/dashboard";
 import FormPage from "./pages/valuationform";
 import EditValuationPage from "./pages/valuationeditform.jsx";
-import { NotificationProvider } from "./context/NotificationContext";
+import { NotificationProvider, useNotification } from "./context/NotificationContext";
 import { ChatProvider } from "./context/ChatContext";
+import { setNotificationHandler, resetUnauthorizedErrorFlag } from "./services/axios";
 import store from "./redux/store";
 import GlobalLoader from "./components/GlobalLoader";
 
-function App() {
+function AppContent() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { hideUnauthorizedError, showUnauthorizedError } = useNotification();
+
+    useEffect(() => {
+        // Initialize notification handler in axios interceptor
+        setNotificationHandler({ showUnauthorizedError, hideUnauthorizedError });
+    }, [showUnauthorizedError, hideUnauthorizedError]);
 
     useEffect(() => {
         // Check if user is logged in on app start
@@ -29,6 +36,10 @@ function App() {
     const handleLogin = (userData) => {
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
+        // Hide unauthorized error notification after successful login
+        hideUnauthorizedError();
+        // Reset flag so error can show again if needed
+        resetUnauthorizedErrorFlag();
     };
 
     // Handle logout
@@ -100,62 +111,72 @@ function App() {
     if (loading) return <LoadingSpinner />;
 
     return (
+        <Routes>
+            {/* Redirect root to dashboard (accessible to both logged in and not logged in users) */}
+            <Route
+                path="/"
+                element={
+                    <Navigate to="/dashboard" replace />
+                }
+            />
+
+            {/* Public Routes */}
+            <Route
+                path="/login"
+                element={
+                    <PublicRoute>
+                        <LoginPage onLogin={handleLogin} />
+                    </PublicRoute>
+                }
+            />
+
+            {/* Protected Routes */}
+            <Route
+                path="/dashboard"
+                element={
+                    <ProtectedRoute>
+                        <DashboardPage user={user} onLogout={handleLogout} onLogin={handleLogin} />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/valuationform"
+                element={
+                    <ProtectedRoute>
+                        <FormPage user={user} onLogin={handleLogin} />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Edit Valuation Page with ID parameter */}
+            <Route
+                path="/valuationeditform/:id"
+                element={
+                    <ProtectedRoute>
+                        <EditValuationPage user={user} onLogin={handleLogin} />
+                    </ProtectedRoute>
+                }
+            />
+
+            
+
+            {/*
+
+            {/* Catch all route - redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+    );
+}
+
+function App() {
+    return (
         <Provider store={store}>
             <NotificationProvider>
                 <ChatProvider>
                     <BrowserRouter>
                         <GlobalLoader />
-                        <Routes>
-                            {/* Redirect root to dashboard (accessible to both logged in and not logged in users) */}
-                            <Route
-                                path="/"
-                                element={
-                                    <Navigate to="/dashboard" replace />
-                                }
-                            />
-
-                            {/* Public Routes */}
-                            <Route
-                                path="/login"
-                                element={
-                                    <PublicRoute>
-                                        <LoginPage onLogin={handleLogin} />
-                                    </PublicRoute>
-                                }
-                            />
-
-                            {/* Protected Routes */}
-                            <Route
-                                path="/dashboard"
-                                element={
-                                    <ProtectedRoute>
-                                        <DashboardPage user={user} onLogout={handleLogout} onLogin={handleLogin} />
-                                    </ProtectedRoute>
-                                }
-                            />
-
-                            <Route
-                                path="/valuationform"
-                                element={
-                                    <ProtectedRoute>
-                                        <FormPage user={user} onLogin={handleLogin} />
-                                    </ProtectedRoute>
-                                }
-                            />
-
-                            {/* Edit Valuation Page with ID parameter */}
-                            <Route
-                                path="/valuationeditform/:id"
-                                element={
-                                    <ProtectedRoute>
-                                        <EditValuationPage user={user} onLogin={handleLogin} />
-                                    </ProtectedRoute>
-                                }
-                            />
-
-                            {/* Catch all route - redirect to login */}
-                            <Route path="*" element={<Navigate to="/login" replace />} />
-                        </Routes>
+                        <AppContent />
                     </BrowserRouter>
                 </ChatProvider>
             </NotificationProvider>

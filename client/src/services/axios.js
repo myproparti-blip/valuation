@@ -4,6 +4,18 @@ import axios from "axios";
 const requestCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Store notification function to be set after app initializes
+let notificationHandler = null;
+let unauthorizedErrorShown = false;
+
+export const setNotificationHandler = (handler) => {
+  notificationHandler = handler;
+};
+
+export const resetUnauthorizedErrorFlag = () => {
+  unauthorizedErrorShown = false;
+};
+
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
 });
@@ -61,6 +73,15 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Check for "Unauthorized - Missing user information" error
+    if (error?.response?.status === 401 && 
+        error?.response?.data?.message === "Unauthorized - Missing user information") {
+      // Show persistent unauthorized error notification only once
+      if (!unauthorizedErrorShown && notificationHandler) {
+        unauthorizedErrorShown = true;
+        notificationHandler.showUnauthorizedError("Unauthorized – Please login to continue.");
+      }
+    }
     return Promise.reject(error);
   }
 );

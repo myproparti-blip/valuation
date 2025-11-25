@@ -4,45 +4,45 @@
 
 @layer base {
     :root {
-        --background: 0 0% 99.5%;
-        --foreground: 224 71.4% 4.1%;
+        --background: 30 100% 97%;
+        --foreground: 0 0% 11%;
         --card: 0 0% 100%;
-        --card-foreground: 224 71.4% 4.1%;
+        --card-foreground: 0 0% 11%;
         --popover: 0 0% 100%;
-        --popover-foreground: 224 71.4% 4.1%;
-        --muted: 0 0% 94%;
-        --muted-foreground: 0 0% 42%;
-        --accent: 32 100% 49%;
+        --popover-foreground: 0 0% 11%;
+        --muted: 30 50% 90%;
+        --muted-foreground: 0 0% 29%;
+        --accent: 16 85% 49%;
         --accent-foreground: 0 0% 100%;
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 0 0% 100%;
-        --border: 0 0% 92%;
-        --input: 0 0% 92%;
-        --ring: 32 100% 49%;
-        --primary: 32 100% 49%;
+        --border: 30 50% 91%;
+        --input: 30 50% 91%;
+        --ring: 16 85% 49%;
+        --primary: 16 85% 49%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 12 80% 27%;
+        --secondary: 30 50% 31%;
         --secondary-foreground: 0 0% 100%;
         --radius: 0.75rem;
     }
 
     .dark {
-        --background: 222.2 84% 4.9%;
-        --foreground: 210 40% 98%;
-        --card: 222.2 84% 4.9%;
-        --card-foreground: 210 40% 98%;
-        --popover: 222.2 84% 4.9%;
-        --popover-foreground: 210 40% 98%;
-        --muted: 217.2 32.6% 17.5%;
-        --muted-foreground: 215 20.2% 65.1%;
-        --accent: 32 100% 49%;
+        --background: 30 50% 10%;
+        --foreground: 0 0% 98%;
+        --card: 30 50% 10%;
+        --card-foreground: 0 0% 98%;
+        --popover: 30 50% 10%;
+        --popover-foreground: 0 0% 98%;
+        --muted: 30 30% 20%;
+        --muted-foreground: 0 0% 65%;
+        --accent: 16 85% 49%;
         --accent-foreground: 0 0% 100%;
         --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 40% 98%;
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
-        --ring: 32 100% 49%;
-        --primary: 32 100% 49%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 30 30% 20%;
+        --input: 30 30% 20%;
+        --ring: 16 85% 49%;
+        --primary: 16 85% 49%;
         --primary-foreground: 0 0% 100%;
     }
 }
@@ -85,15 +85,15 @@
     }
 
     .form-label {
-        @apply text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[#3A3A3A] uppercase tracking-wider;
+        @apply text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[#1B1B1B] uppercase tracking-wider;
     }
 
     .form-input {
-        @apply flex h-11 w-full rounded-lg border-2 border-[#E5E7EB] bg-white px-4 py-2 text-base ring-offset-background placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:border-[#F36E21] focus-visible:ring-2 focus-visible:ring-[#F36E21]/20 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#F9FAFB] md:text-sm font-medium transition-all duration-200 shadow-sm text-[#3A3A3A];
+        @apply flex h-11 w-full rounded-lg border-2 border-[#E6D6C8] bg-white px-4 py-2 text-base ring-offset-background placeholder:text-[#4A4A4A] focus-visible:outline-none focus-visible:border-[#E46F25] focus-visible:ring-2 focus-visible:ring-[#E46F25]/20 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#FFF6EF] md:text-sm font-medium transition-all duration-200 shadow-sm text-[#1B1B1B];
     }
 
     .form-textarea {
-        @apply flex min-h-[120px] w-full rounded-lg border-2 border-[#E5E7EB] bg-white px-4 py-2 text-base ring-offset-background placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:border-[#F36E21] focus-visible:ring-2 focus-visible:ring-[#F36E21]/20 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#F9FAFB] md:text-sm font-medium transition-all duration-200 shadow-sm resize-none text-[#3A3A3A];
+        @apply flex min-h-[120px] w-full rounded-lg border-2 border-[#E6D6C8] bg-white px-4 py-2 text-base ring-offset-background placeholder:text-[#4A4A4A] focus-visible:outline-none focus-visible:border-[#E46F25] focus-visible:ring-2 focus-visible:ring-[#E46F25]/20 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#FFF6EF] md:text-sm font-medium transition-all duration-200 shadow-sm resize-none text-[#1B1B1B];
     }
 }
 

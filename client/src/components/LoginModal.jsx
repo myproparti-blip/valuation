@@ -1,13 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash, FaEnvelope, FaLock } from "react-icons/fa";
 import { Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Input, Label } from "./ui";
 import { loginUser } from "../services/auth";
+import { useNotification } from "../context/NotificationContext";
 
 const LoginModal = ({ isOpen, onClose, onLogin }) => {
+    const { showError } = useNotification();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ username: "", password: "" });
     const [error, setError] = useState("");
+    const [internalOpen, setInternalOpen] = useState(isOpen);
+
+    useEffect(() => {
+        // Sync opening from parent, but ignore closing requests if error exists
+        if (isOpen && !internalOpen) {
+            setInternalOpen(true);
+            setError("");
+        } else if (!isOpen && internalOpen && !error) {
+            // Only close if no error exists
+            setInternalOpen(false);
+        }
+    }, [isOpen]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -21,6 +35,23 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
             setLoading(true);
             setError("");
 
+            // Custom validation
+            if (!formData.username.trim()) {
+                const errorMsg = "Username is required";
+                setError(errorMsg);
+                showError(errorMsg);
+                setLoading(false);
+                return;
+            }
+
+            if (!formData.password.trim()) {
+                const errorMsg = "Password is required";
+                setError(errorMsg);
+                showError(errorMsg);
+                setLoading(false);
+                return;
+            }
+
             const response = await loginUser(formData.username, formData.password);
 
             localStorage.setItem("user", JSON.stringify(response));
@@ -31,6 +62,7 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
 
             // Reset form
             setFormData({ username: "", password: "" });
+            setInternalOpen(false);
             onClose();
 
         } catch (error) {
@@ -38,13 +70,26 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
                 error?.response?.data?.message ||
                 "Invalid username or password";
             setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleDialogOpenChange = (open) => {
+        // Block closing via X button or outside click if error exists
+        if (!open) {
+            if (error) {
+                return; // Do nothing, keep modal open
+            }
+            // Allow closing only if no error
+            setInternalOpen(false);
+            onClose();
+        }
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={internalOpen} onOpenChange={handleDialogOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Login</DialogTitle>
@@ -75,7 +120,6 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
                                      onChange={handleInputChange}
                                      disabled={loading}
                                      className="pl-10"
-                                     required
                                  />
                              </div>
                          </div>
@@ -94,7 +138,6 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
                                      onChange={handleInputChange}
                                      disabled={loading}
                                      className="pl-10 pr-10"
-                                     required
                                  />
                                  <button
                                      type="button"

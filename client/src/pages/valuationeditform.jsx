@@ -1677,33 +1677,36 @@ const EditValuationPage = ({ user, onLogin }) => {
 
                                             {/* 4 Upload Options */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                {[1, 2, 3, 4].map((num) => (
-                                                    <Card key={num} className="border-2 border-dashed transition-all cursor-pointer">
-                                                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
-                                                            <input
-                                                                type="file"
-                                                                ref={eval(`fileInputRef${num}`)}
-                                                                multiple
-                                                                accept="image/*"
-                                                                onChange={(e) => handleImageUpload(e, num)}
-                                                                style={{ display: 'none' }}
-                                                                disabled={!canEdit}
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                onClick={() => eval(`fileInputRef${num}.current?.click()`)}
-                                                                variant="outline"
-                                                                className="flex items-center gap-2 w-full h-full min-h-[100px] border-2 border-dashed"
-                                                                disabled={!canEdit}
-                                                            >
-                                                                <div className="text-center">
-                                                                    <FaUpload className="h-8 w-8 mb-2 mx-auto" />
-                                                                    <div className="text-sm font-medium">Upload Images {num}</div>
-                                                                </div>
-                                                            </Button>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))}
+                                                {[1, 2, 3, 4].map((num) => {
+                                                    const roomNames = { 1: 'Kitchen', 2: 'Hall', 3: 'Bedroom', 4: 'Elevation' };
+                                                    return (
+                                                        <Card key={num} className="border-2 border-dashed transition-all cursor-pointer">
+                                                            <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
+                                                                <input
+                                                                    type="file"
+                                                                    ref={eval(`fileInputRef${num}`)}
+                                                                    multiple
+                                                                    accept="image/*"
+                                                                    onChange={(e) => handleImageUpload(e, num)}
+                                                                    style={{ display: 'none' }}
+                                                                    disabled={!canEdit}
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    onClick={() => eval(`fileInputRef${num}.current?.click()`)}
+                                                                    variant="outline"
+                                                                    className="flex items-center gap-2 w-full h-full min-h-[100px] border-2 border-dashed"
+                                                                    disabled={!canEdit}
+                                                                >
+                                                                    <div className="text-center">
+                                                                        <FaUpload className="h-8 w-8 mb-2 mx-auto" />
+                                                                        <div className="text-sm font-medium">Upload {roomNames[num]} Images</div>
+                                                                    </div>
+                                                                </Button>
+                                                            </CardContent>
+                                                        </Card>
+                                                    );
+                                                })}
                                             </div>
 
                                             {/* Combined Image Previews */}

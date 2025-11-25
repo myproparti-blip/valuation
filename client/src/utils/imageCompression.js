@@ -82,7 +82,6 @@ export const compressMultipleImages = async (files, maxWidth = 480, maxHeight = 
     );
     return compressedFiles;
   } catch (error) {
-    console.error('Error compressing images:', error);
     throw error;
   }
 };

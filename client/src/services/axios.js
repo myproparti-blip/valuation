@@ -23,6 +23,7 @@ const api = axios.create({
 // Add auth info to requests
 api.interceptors.request.use((config) => {
   const user = localStorage.getItem("user");
+  
   if (user) {
     try {
       const userData = JSON.parse(user);
@@ -35,6 +36,13 @@ api.interceptors.request.use((config) => {
       }
     } catch (e) {
       // Invalid JSON, skip
+    }
+  } else {
+    // For unauthenticated users, send a default guest user
+    // This allows read-only access to the dashboard
+    if (config.method === 'get') {
+      const guestUser = { username: "guest", role: "guest" };
+      config.headers["Authorization"] = encodeURIComponent(JSON.stringify(guestUser));
     }
   }
 

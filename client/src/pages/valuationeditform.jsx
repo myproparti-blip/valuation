@@ -41,6 +41,7 @@ const EditValuationPage = ({ user, onLogin }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [modalAction, setModalAction] = useState(null);
     const [modalFeedback, setModalFeedback] = useState("");
+    const [activeTab, setActiveTab] = useState("address");
     const [formData, setFormData] = useState({
         // BASIC INFO
         uniqueId: '',
@@ -996,18 +997,6 @@ const EditValuationPage = ({ user, onLogin }) => {
         const statusValue = modalAction === "approve" ? "approved" : "rejected";
         const actionLabel = modalAction === "approve" ? "Approve" : "Reject";
 
-        // Validate rejection feedback
-        if (statusValue === "rejected") {
-            if (!modalFeedback || !modalFeedback.trim()) {
-                showError("Rejection feedback is required. Please provide detailed feedback for rejection");
-                return;
-            }
-            if (modalFeedback.trim().length < 10) {
-                showError("Rejection feedback must be at least 10 characters long");
-                return;
-            }
-        }
-
         try {
             setLoading(true);
             dispatch(showLoader(`${actionLabel}ing form...`));
@@ -1195,6 +1184,68 @@ const EditValuationPage = ({ user, onLogin }) => {
                             </CardHeader>
                             <CardContent className="p-8">
                                 <div className="space-y-8">
+
+                                    {/* Tab Navigation - Below Payment Status */}
+                                    <div className="flex flex-wrap gap-2 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                                        <button
+                                            onClick={() => setActiveTab("address")}
+                                            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${activeTab === "address"
+                                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                                                : "bg-white border-2 border-gray-300 text-gray-900 hover:border-orange-500"
+                                                }`}
+                                        >
+                                            Address
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab("properties")}
+                                            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${activeTab === "properties"
+                                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                                                : "bg-white border-2 border-gray-300 text-gray-900 hover:border-orange-500"
+                                                }`}
+                                        >
+                                            Properties
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab("payment")}
+                                            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${activeTab === "payment"
+                                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                                                : "bg-white border-2 border-gray-300 text-gray-900 hover:border-orange-500"
+                                                }`}
+                                        >
+                                            Payment
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab("documents")}
+                                            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${activeTab === "documents"
+                                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                                                : "bg-white border-2 border-gray-300 text-gray-900 hover:border-orange-500"
+                                                }`}
+                                        >
+                                            Documents
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab("details")}
+                                            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${activeTab === "details"
+                                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                                                : "bg-white border-2 border-gray-300 text-gray-900 hover:border-orange-500"
+                                                }`}
+                                        >
+                                            Details
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab("valuation")}
+                                            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${activeTab === "valuation"
+                                                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md"
+                                                : "bg-white border-2 border-gray-300 text-gray-900 hover:border-orange-500"
+                                                }`}
+                                        >
+                                            Valuation
+                                        </button>
+                                    </div>
+
+                                    {/* CLIENT INFORMATION Section */}
+                                    {activeTab === "address" && (
+                                    <>
 
                                     {/* Client Information Section */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-orange-50 to-white rounded-2xl border border-orange-100">
@@ -1436,7 +1487,12 @@ const EditValuationPage = ({ user, onLogin }) => {
                                         </div>
                                     </div>
 
-                                    <div className="border-t-2 border-gray-200"></div>
+                                    </>
+                                    )}
+
+                                    {/* PAYMENT Section */}
+                                    {activeTab === "payment" && (
+                                    <>
 
                                     {/* Payment Section */}
                                     <div className="space-y-4 p-6 bg-gradient-to-br from-green-50 to-white rounded-2xl border border-green-100">
@@ -1468,7 +1524,12 @@ const EditValuationPage = ({ user, onLogin }) => {
                                         )}
                                     </div>
 
-                                    <div className="border-t-2 border-gray-200"></div>
+                                    </>
+                                    )}
+
+                                    {/* PROPERTIES Section */}
+                                    {activeTab === "properties" && (
+                                    <>
 
                                     {/* Property Basic Details Section */}
                                     <div className="space-y-4">
@@ -1494,34 +1555,18 @@ const EditValuationPage = ({ user, onLogin }) => {
                                         </div>
                                     </div>
 
-                                    <div className="border-t-2 border-gray-200"></div>
+                                    </>
+                                    )}
 
-                                    {/* Notes Section */}
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                            <FaFileAlt className="h-5 w-5 text-orange-600" />
-                                            Additional Notes
-                                        </h3>
-                                        <div className="space-y-2">
-                                            <Textarea
-                                                placeholder="Enter any additional notes or comments..."
-                                                name="notes"
-                                                value={formData.notes || ""}
-                                                onChange={handleInputChange}
-                                                disabled={!canEdit}
-                                                rows={4}
-                                                className="rounded-xl border-2 border-orange-300 focus:border-orange-500 focus:ring-orange-200 font-medium"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t-2 border-gray-200"></div>
+                                    {/* DOCUMENTS Section */}
+                                    {activeTab === "documents" && (
+                                    <>
 
                                     {/* Location Images Section */}
                                     <div>
                                         <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                                             <FaMapMarkerAlt className="h-5 w-5 text-orange-600" />
-                                            Location Images
+                                            Location Images & Coordinates
                                         </h3>
                                         <div className="space-y-6">
 
@@ -1704,7 +1749,38 @@ const EditValuationPage = ({ user, onLogin }) => {
                                         </div>
                                     </div>
 
-                                    <div className="border-t-2 border-gray-200"></div>
+                                    </>
+                                    )}
+
+                                    {/* DETAILS Section */}
+                                    {activeTab === "details" && (
+                                    <>
+
+                                    {/* Notes Section */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <FaFileAlt className="h-5 w-5 text-orange-600" />
+                                            Additional Notes
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <Textarea
+                                                placeholder="Enter any additional notes or comments..."
+                                                name="notes"
+                                                value={formData.notes || ""}
+                                                onChange={handleInputChange}
+                                                disabled={!canEdit}
+                                                rows={4}
+                                                className="rounded-xl border-2 border-orange-300 focus:border-orange-500 focus:ring-orange-200 font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    </>
+                                    )}
+
+                                    {/* VALUATION Section */}
+                                    {activeTab === "valuation" && (
+                                    <>
 
                                     {/* PDF Details Section */}
                                     <div>
@@ -1807,7 +1883,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 <div className="space-y-2">
                                                     <Label className="text-sm font-bold text-gray-900">Inspection Date</Label>
                                                     <Input
-                                                        placeholder="Inspection date"
+                                                        type="date"
                                                         value={formData.pdfDetails?.inspectionDate || ""}
                                                         onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, inspectionDate: e.target.value } }))}
                                                         disabled={!canEdit}
@@ -1817,7 +1893,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 <div className="space-y-2">
                                                     <Label className="text-sm font-bold text-gray-900">Valuation Made Date</Label>
                                                     <Input
-                                                        placeholder="Valuation made date"
+                                                        type="date"
                                                         value={formData.pdfDetails?.valuationMadeDate || ""}
                                                         onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, valuationMadeDate: e.target.value } }))}
                                                         disabled={!canEdit}
@@ -1894,7 +1970,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 <div className="space-y-2">
                                                     <Label className="text-sm font-bold text-gray-900">Layout Plan Issue Date</Label>
                                                     <Input
-                                                        placeholder="Layout plan issue date"
+                                                        type="date"
                                                         value={formData.pdfDetails?.layoutPlanIssueDate || ""}
                                                         onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, layoutPlanIssueDate: e.target.value } }))}
                                                         disabled={!canEdit}
@@ -3018,7 +3094,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 <div className="space-y-2">
                                                     <Label className="text-sm font-bold text-gray-900">Signature Date</Label>
                                                     <Input
-                                                        placeholder="Signature date"
+                                                        type="date"
                                                         value={formData.pdfDetails?.signatureDate || ""}
                                                         onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, signatureDate: e.target.value } }))}
                                                         disabled={!canEdit}
@@ -3038,7 +3114,7 @@ const EditValuationPage = ({ user, onLogin }) => {
                                                 <div className="space-y-2">
                                                     <Label className="text-sm font-bold text-gray-900">Report Date</Label>
                                                     <Input
-                                                        placeholder="Report date"
+                                                        type="date"
                                                         value={formData.pdfDetails?.reportDate || ""}
                                                         onChange={(e) => setFormData(prev => ({ ...prev, pdfDetails: { ...prev.pdfDetails, reportDate: e.target.value } }))}
                                                         disabled={!canEdit}
@@ -3048,6 +3124,9 @@ const EditValuationPage = ({ user, onLogin }) => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    </>
+                                    )}
 
                                     {/* Action Buttons */}
                                     <div className="border-t-2 border-gray-200 pt-6 mt-6">

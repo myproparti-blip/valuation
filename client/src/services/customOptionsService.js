@@ -15,7 +15,6 @@ export const getCustomOptions = async (type) => {
     const response = await api.get(`${API_BASE_URL}/${type}`);
     return response.data.data || [];
   } catch (error) {
-    console.error(`Error fetching ${type} options:`, error);
     return [];
   }
 };
@@ -38,7 +37,6 @@ export const deleteCustomOption = async (type, value) => {
     const response = await api.delete(`${API_BASE_URL}/${type}/${value}`);
     return response.data;
   } catch (error) {
-    console.error(`Error deleting ${type} option:`, error);
     throw error;
   }
 };

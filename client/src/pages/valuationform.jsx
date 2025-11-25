@@ -22,6 +22,7 @@ const FormPage = ({ user, onLogin }) => {
     const [payment, setPayment] = useState("");
     const [dsa, setDsa] = useState("");
     const [engineerName, setEngineerName] = useState("");
+    const formRef = useRef(null);
     const [formData, setFormData] = useState({
         bankName: "",
         customBankName: "",
@@ -104,9 +105,7 @@ const FormPage = ({ user, onLogin }) => {
             setDsaNames(uniqueDsas);
             setEngineers(uniqueEngineers);
             setIsDataLoaded(true);
-            console.log("✓ Custom options loaded successfully");
         } catch (error) {
-            console.error("Error loading custom options:", error);
             if (!isMountedRef.current) return;
 
             // Fallback to defaults on error
@@ -238,7 +237,6 @@ const FormPage = ({ user, onLogin }) => {
             // Clear cache after adding custom option to ensure fresh data
             invalidateCache("custom-options");
         } catch (error) {
-            console.error(`Error saving custom ${type}:`, error);
         }
     };
 
@@ -267,131 +265,135 @@ const FormPage = ({ user, onLogin }) => {
                 loadCustomOptions();
             }, 200);
         } catch (error) {
-            console.error(`Error deleting ${type}:`, error);
             showError(`Failed to delete ${type} option`);
         }
     };
 
     const onFinish = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        // Check if user has permission to submit forms
-        if (role !== "user" && role !== "manager1" && role !== "manager2" && role !== "admin") {
-            showError("You don't have permission to submit forms");
-            return;
+    // Prevent HTML form native reset - ensure form doesn't auto-clear
+    if (formRef.current) {
+        formRef.current.onreset = (resetEvent) => resetEvent.preventDefault();
+    }
+
+    // Check if user has permission to submit forms
+    if (role !== "user" && role !== "manager1" && role !== "manager2" && role !== "admin") {
+        showError("You don't have permission to submit forms");
+        return;
+    }
+
+    const finalBankName = bankName === "other" ? formData.customBankName : bankName;
+    const finalCity = city === "other" ? formData.customCity : city;
+    const finalDsa = dsa === "other" ? formData.customDsa : dsa;
+    const finalEngineer = engineerName === "other" ? formData.customEngineerName : engineerName;
+
+    const errors = [];
+
+    // Collect all validation errors
+    if (!finalBankName) errors.push("Bank Name");
+    if (!finalCity) errors.push("City");
+    if (!formData.clientName) errors.push("Client Name");
+    if (!formData.mobileNumber) errors.push("Mobile Number");
+    if (!formData.address) errors.push("Address");
+    if (!payment) errors.push("Payment Status");
+    if (!finalDsa) errors.push("Sales Agent (DSA)");
+    if (!finalEngineer) errors.push("Engineer Name");
+
+    // Show single consolidated error if any field is empty
+    if (errors.length > 0) {
+        showError(`Please fill all required fields: ${errors.join(", ")}`);
+        // Form data remains intact in state - inputs keep their values
+        return;
+    }
+
+    // Mobile number validation
+    if (formData.mobileNumber.length !== 10) {
+        showError("Please enter a valid 10-digit mobile number");
+        // Form data remains intact in state - inputs keep their values
+        return;
+    }
+
+    // If we reach here, validation passed - proceed with submission
+    try {
+        setLoading(true);
+        dispatch(showLoader("Submitting your form..."));
+
+        const payload = {
+            bankName: finalBankName,
+            customBankName: formData.customBankName,
+            city: finalCity,
+            customCity: formData.customCity,
+            clientName: formData.clientName,
+            mobileNumber: formData.mobileNumber,
+            address: formData.address,
+            payment: payment,
+            collectedBy: formData.collectedBy,
+            dsa: finalDsa,
+            customDsa: formData.customDsa,
+            engineerName: finalEngineer,
+            customEngineerName: formData.customEngineerName,
+            notes: formData.notes,
+            username,
+            uniqueId,
+            dateTime,
+            day,
+            status: "pending"
+        };
+
+        // Save custom entries to database only if they don't exist
+        const saveCustomPromises = [];
+        
+        if (bankName === "other" && formData.customBankName && !banks.includes(formData.customBankName)) {
+            saveCustomPromises.push(saveCustomEntry("banks", formData.customBankName));
+        }
+        
+        if (city === "other" && formData.customCity && !cities.includes(formData.customCity)) {
+            saveCustomPromises.push(saveCustomEntry("cities", formData.customCity));
+        }
+        
+        if (dsa === "other" && formData.customDsa && !dsaNames.includes(formData.customDsa)) {
+            saveCustomPromises.push(saveCustomEntry("dsas", formData.customDsa));
+        }
+        
+        if (engineerName === "other" && formData.customEngineerName && !engineers.includes(formData.customEngineerName)) {
+            saveCustomPromises.push(saveCustomEntry("engineers", formData.customEngineerName));
         }
 
-        const finalBankName = bankName === "other" ? formData.customBankName : bankName;
-        const finalCity = city === "other" ? formData.customCity : city;
-        const finalDsa = dsa === "other" ? formData.customDsa : dsa;
-        const finalEngineer = engineerName === "other" ? formData.customEngineerName : engineerName;
-
-        const errors = [];
-
-        // Collect all validation errors
-        if (!finalBankName) errors.push("Bank Name");
-        if (!finalCity) errors.push("City");
-        if (!formData.clientName) errors.push("Client Name");
-        if (!formData.mobileNumber) errors.push("Mobile Number");
-        if (!formData.address) errors.push("Address");
-        if (!payment) errors.push("Payment Status");
-        if (!finalDsa) errors.push("Sales Agent (DSA)");
-        if (!finalEngineer) errors.push("Engineer Name");
-
-        // Show single consolidated error if any field is empty
-        if (errors.length > 0) {
-            showError(`Please fill all required fields: ${errors.join(", ")}`);
-            return;
+        // Wait for custom entries to be saved
+        if (saveCustomPromises.length > 0) {
+            await Promise.all(saveCustomPromises);
         }
 
-        // Mobile number validation
-        if (formData.mobileNumber.length !== 10) {
-            showError("Please enter a valid 10-digit mobile number");
-            return;
-        }
+        // Clear draft only after successful submission
+        localStorage.removeItem(`valuation_draft_${username}`);
 
-        // Save custom entries to database and update state (prevent duplicates)
-        if (bankName === "other" && formData.customBankName) {
-            if (!banks.includes(formData.customBankName)) {
-                await saveCustomEntry("banks", formData.customBankName);
-                setBanks(prev => [formData.customBankName, ...prev]);
-            }
-        }
+        // Run both API requests in parallel
+        await Promise.all([
+            submitFile(payload),
+            createValuation(payload)
+        ]);
 
-        if (city === "other" && formData.customCity) {
-            if (!cities.includes(formData.customCity)) {
-                await saveCustomEntry("cities", formData.customCity);
-                setCities(prev => [formData.customCity, ...prev]);
-            }
-        }
+        // Success - form values remain visible during success notification
+        showSuccess("Form submitted successfully!");
+        dispatch(hideLoader());
 
-        if (dsa === "other" && formData.customDsa) {
-            if (!dsaNames.includes(formData.customDsa)) {
-                await saveCustomEntry("dsas", formData.customDsa);
-                setDsaNames(prev => [formData.customDsa, ...prev]);
-            }
-        }
+        // Reload custom options to include any new ones
+        loadCustomOptions();
 
-        if (engineerName === "other" && formData.customEngineerName) {
-            if (!engineers.includes(formData.customEngineerName)) {
-                await saveCustomEntry("engineers", formData.customEngineerName);
-                setEngineers(prev => [formData.customEngineerName, ...prev]);
-            }
-        }
+        // Navigate after success message is displayed
+        setTimeout(() => {
+            navigate("/dashboard", { replace: true });
+        }, 300);
 
-        try {
-            setLoading(true);
-            dispatch(showLoader("Submitting your form..."));
-
-            const payload = {
-                bankName: finalBankName,
-                customBankName: formData.customBankName,
-                city: finalCity,
-                customCity: formData.customCity,
-                clientName: formData.clientName,
-                mobileNumber: formData.mobileNumber,
-                address: formData.address,
-                payment: payment,
-                collectedBy: formData.collectedBy,
-                dsa: finalDsa,
-                customDsa: formData.customDsa,
-                engineerName: finalEngineer,
-                customEngineerName: formData.customEngineerName,
-                notes: formData.notes,
-                username,
-                uniqueId,
-                dateTime,
-                day,
-                status: "pending"
-            };
-
-            // Clear draft before API call to avoid race conditions
-            localStorage.removeItem(`valuation_draft_${username}`);
-
-            // Run both requests in parallel
-            const [fileResponse, valuationResponse] = await Promise.all([
-                submitFile(payload),
-                createValuation(payload)
-            ]);
-
-            showSuccess("Form submitted successfully!");
-            dispatch(hideLoader());
-
-            // Keep custom options in state before navigating
-            // This ensures they persist for future use
-            loadCustomOptions();
-
-            // Navigate after success message
-            setTimeout(() => {
-                navigate("/dashboard", { replace: true });
-            }, 300);
-        } catch (err) {
-            showError(err.message || "Failed to submit form");
-            dispatch(hideLoader());
-            setLoading(false);
-        }
-    };
-
+    } catch (err) {
+        showError(err.message || "Failed to submit form");
+        dispatch(hideLoader());
+        setLoading(false);
+        // Form data remains intact in state - no reset on error
+        // User can see validation errors and correct the form
+    }
+};
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 p-4 md:p-6">
             {!isLoggedIn && (
@@ -462,7 +464,7 @@ const FormPage = ({ user, onLogin }) => {
                                 <p className="text-orange-100 text-sm mt-1">Fill in all required fields marked with *</p>
                             </CardHeader>
                             <CardContent className="p-8">
-                                <form onSubmit={onFinish} className="space-y-8">
+                                <form onSubmit={onFinish} ref={formRef} className="space-y-8">
 
                                     {/* Bank Section */}
                                     <div className="space-y-4">

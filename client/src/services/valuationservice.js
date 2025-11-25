@@ -82,9 +82,12 @@ export const managerSubmit = async (id, data) => {
 export const getAllValuations = async (params) => {
   try {
     const response = await api.get(`${API_BASE_URL}`, { params });
-    return response.data || [];
+    // API returns array directly, not wrapped in {data: [...]}
+    const data = response.data;
+    return Array.isArray(data) ? data : (data?.data || []);
   } catch (error) {
     handleError(error, "Failed to fetch valuations");
+    return [];
   }
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar, FaLock, FaComments, FaClock, FaSpinner, FaCheckCircle, FaTimesCircle, FaEdit, FaFileAlt } from "react-icons/fa";
+import { FaSignOutAlt, FaPlus, FaDownload, FaSyncAlt, FaEye, FaSort, FaChartBar, FaLock, FaClock, FaSpinner, FaCheckCircle, FaTimesCircle, FaEdit, FaFileAlt } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../components/ui";
 import { getAllValuations } from "../services/valuationservice";
@@ -12,7 +12,6 @@ import { invalidateCache } from "../services/axios";
 import { useNotification } from "../context/NotificationContext";
 import Pagination from "../components/Pagination";
 import LoginModal from "../components/LoginModal";
-import ChatModal from "../components/Chat/ChatModal";
 import SearchBar from "../components/SearchBar";
 
 const DashboardPage = ({ user, onLogout, onLogin }) => {
@@ -33,7 +32,6 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     const [engineerFilter, setEngineerFilter] = useState(null);
     const [sortField, setSortField] = useState("createdAt");
     const [sortOrder, setSortOrder] = useState("desc");
-    const [chatModalOpen, setChatModalOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [copiedRows, setCopiedRows] = useState(new Map()); // Map<id, rowData>
     const username = user?.username || "";
@@ -140,17 +138,39 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         dispatch(setCurrentPage(1));
     }, [statusFilter, cityFilter, bankFilter, engineerFilter, dispatch]);
 
+    // Handle logout - clear files when user logs out
     useEffect(() => {
-        // Fetch files on component mount only - with cache invalidation
-        if (!isMountedRef.current) {
-            isMountedRef.current = true;
-            // Clear any cached valuation data to ensure fresh data on mount
+        if (!isLoggedIn) {
+            setFiles([]);
+            setTimeDurations({});
+            setStatusFilter(null);
+            setCityFilter(null);
+            setBankFilter(null);
+            setEngineerFilter(null);
+            setSortField("createdAt");
+            setSortOrder("desc");
+            setSelectedRows(new Set());
+            setCopiedRows(new Map());
+            dispatch(setTotalItems(0));
+            dispatch(setCurrentPage(1));
+        }
+    }, [isLoggedIn, dispatch]);
+
+    // Handle login - refetch files when user logs in
+    useEffect(() => {
+        if (isLoggedIn && isMountedRef.current) {
+            // Refetch when user logs in
             invalidateCache("/valuations");
-            // Show loading state during initial fetch
+            dispatch(showLoader("Loading Data..."));
+            fetchFiles(true);
+        } else if (!isMountedRef.current && isLoggedIn) {
+            // Initial mount with logged in user
+            isMountedRef.current = true;
+            invalidateCache("/valuations");
             dispatch(showLoader("Loading Data..."));
             fetchFiles(true);
         }
-    }, [dispatch]);
+    }, [isLoggedIn, dispatch]);
 
     useEffect(() => {
         // Duration update interval - update every second for real-time display
@@ -194,12 +214,18 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
         dispatch(showLoader("Loading Data..."));
         try {
             await logoutUser();
+            // Clear files immediately
+            setFiles([]);
+            setTimeDurations({});
             if (onLogout) onLogout();
             setTimeout(() => {
                 dispatch(hideLoader());
                 navigate("/dashboard");
             }, 500);
         } catch (error) {
+            // Clear files even on error
+            setFiles([]);
+            setTimeDurations({});
             if (onLogout) onLogout();
             dispatch(hideLoader());
             navigate("/dashboard");
@@ -338,18 +364,14 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-                            {isLoggedIn && (role === "user" || role === "admin" || ["manager1", "manager2"].includes(role)) && (
-                                <>
-                                    <button
-                                        onClick={() => navigate("/valuationform")}
-                                        className="bg-white text-[#F36E21] hover:bg-orange-50 hover:text-[#EC5E25] hover:shadow-xl h-9 w-9 sm:h-10 sm:w-10 shadow-lg transition-all duration-300 border-2 border-orange-100 inline-flex items-center justify-center flex-shrink-0 rounded-lg"
-                                        title="New Form"
-                                    >
-                                        <FaPlus className="h-5 w-5 sm:h-6 sm:w-6 text-[#F36E21]" />
-                                    </button>
-                                    <div className="h-8 sm:h-10 w-px bg-white/30"></div>
-                                </>
-                            )}
+                            <button
+                                onClick={() => navigate("/valuationform")}
+                                className="bg-white text-[#F36E21] hover:bg-orange-50 hover:text-[#EC5E25] hover:shadow-xl h-9 w-9 sm:h-10 sm:w-10 shadow-lg transition-all duration-300 border-2 border-orange-100 inline-flex items-center justify-center flex-shrink-0 rounded-lg"
+                                title="New Form"
+                            >
+                                <FaPlus style={{ fontSize: "18px" }} />
+                            </button>
+                            <div className="h-8 sm:h-10 w-px bg-white/30"></div>
 
                             {!isLoggedIn ? (
                                 <Button
@@ -754,26 +776,6 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                     </CardContent>
                 </Card>
             </main>
-
-            {/* Chat Modal */}
-            {isLoggedIn && (
-                <>
-                    <ChatModal
-                        isOpen={chatModalOpen}
-                        onClose={() => setChatModalOpen(false)}
-                        user={user}
-                    />
-
-                    {/* Floating Chat Button */}
-                    <button
-                        onClick={() => setChatModalOpen(true)}
-                        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gradient-to-br from-blue-700 to-blue-900 text-white shadow-2xl hover:shadow-3xl transition-all hover:scale-125 flex items-center justify-center font-bold border-4 border-blue-500 hover:border-blue-300"
-                        title="Chat Support"
-                    >
-                        <FaComments className="w-8 h-8" />
-                    </button>
-                </>
-            )}
 
             {/* Login Modal */}
             <LoginModal

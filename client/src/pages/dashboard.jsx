@@ -112,7 +112,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
     const calculateTimeDurations = (filesList) => {
         const durations = {};
         filesList.forEach(record => {
-            if (record.status === "pending" || record.status === "on-progress" || record.status === "rejected") {
+            if (record.status === "pending" || record.status === "on-progress" || record.status === "rejected" || record.status === "rework") {
                 const createdTime = new Date(record.createdAt).getTime();
                 const now = new Date().getTime();
                 const diffMs = now - createdTime;
@@ -403,9 +403,9 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                  <FaPlus style={{ fontSize: "18px" }} />
                              </button>
                              <button
-                                 onClick={() => navigate("/billing")}
+                                 onClick={() => navigate("/bills")}
                                  className="bg-white text-[#F36E21] hover:bg-orange-50 hover:text-[#EC5E25] hover:shadow-xl h-9 w-9 sm:h-10 sm:w-10 shadow-lg transition-all duration-300 border-2 border-orange-100 inline-flex items-center justify-center flex-shrink-0 rounded-lg"
-                                 title="Billing"
+                                 title="Bills"
                              >
                                  <FaCreditCard style={{ fontSize: "16px" }} />
                              </button>
@@ -451,7 +451,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
             {/* Main Content */}
             <main className="p-3 sm:p-5 md:p-8 space-y-4 sm:space-y-5 md:space-y-8">
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
                     <StatCard
                         title="Pending"
                         value={pendingCount}
@@ -479,6 +479,13 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                         color="from-rose-600 to-rose-800"
                         status="rejected"
                         icon={FaTimesCircle}
+                    />
+                    <StatCard
+                        title="Rework"
+                        value={reworkCount}
+                        color="from-amber-600 to-amber-800"
+                        status="rework"
+                        icon={FaRedo}
                     />
                 </div>
 
@@ -774,7 +781,7 @@ const DashboardPage = ({ user, onLogout, onLogin }) => {
                                                                     <FaEye className="h-3 w-3" />
                                                                 </Badge>
                                                             )}
-                                                            {(["manager1", "manager2"].includes(role) || role === "admin") && record.status === "rejected" && (
+                                                            {(["manager1", "manager2"].includes(role) || role === "admin") && (record.status === "rejected" || record.status === "rework") && (
                                                                 <Badge
                                                                     variant="destructive"
                                                                     className="text-xs px-2.5 py-1.5 cursor-pointer hover:shadow-lg hover:scale-110 font-bold transition-all duration-200 flex items-center gap-1.5"

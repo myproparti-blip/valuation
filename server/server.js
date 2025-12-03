@@ -1,32 +1,50 @@
-// server.js
+// ---------------------------------------------------
+// server.js (Production-Ready / Vercel Compatible)
+// ---------------------------------------------------
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
-const { connection } = mongoose;  // no unused variable warning
 import connectDB from "./config/db.js";
 
-dotenv.config();
+// ---------------------------------------------------
+// ENVIRONMENT LOADING
+// ---------------------------------------------------
+const envFile =
+  process.env.NODE_ENV === "production"
+    ? ".env.production"
+    : ".env.development";
 
+dotenv.config({ path: envFile });
+
+// ---------------------------------------------------
+// EXPRESS APP
+// ---------------------------------------------------
 const app = express();
 
 // ---------------------------------------------------
 // GLOBAL MONGOOSE CACHED CONNECTION (VERCEL SAFE)
 // ---------------------------------------------------
-let isConnected = false;
+let globalConnection = global.mongooseConnection;
 
 async function connectDatabase() {
-  if (isConnected && connection.readyState === 1) return;
+  if (globalConnection && globalConnection.readyState === 1) {
+    return globalConnection;
+  }
 
-  const db = await connectDB();
-  isConnected = connection.readyState === 1;
+  globalConnection = await connectDB();
+  global.mongooseConnection = globalConnection; // cache globally for serverless
+
+  return globalConnection;
 }
 
 // ---------------------------------------------------
-// SAFE CORS FOR SERVERLESS ENV (NO CRASHES)
+// SECURE CORS (NO CRASH IN SERVERLESS)
 // ---------------------------------------------------
 const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:3000",
+  process.env.CLIENT_URL,
+  "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:5173",
   "https://valuation-qb2y.vercel.app",
@@ -35,38 +53,37 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // mobile apps, curl, postman
       if (allowedOrigins.includes(origin)) return callback(null, true);
       if (origin.endsWith(".vercel.app")) return callback(null, true);
 
-      // Do NOT throw error in serverless
-      return callback(null, false);
+      return callback(null, false); // block unknown but do NOT throw error
     },
     credentials: true,
   })
 );
 
 // ---------------------------------------------------
-// BODY PARSERS
+// BODY PARSER
 // ---------------------------------------------------
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // ---------------------------------------------------
-// AUTO CONNECT DB ON EVERY REQUEST (CACHED)
+// AUTO DB CONNECTOR (SAFE FOR VERCEL)
 // ---------------------------------------------------
 app.use(async (req, res, next) => {
   try {
     await connectDatabase();
     next();
-  } catch (err) {
-    console.error("MongoDB Connection Error:", err.message);
-    res.status(503).json({ message: "DB unavailable" });
+  } catch (error) {
+    console.error("MongoDB Error:", error.message);
+    res.status(503).json({ message: "Database unavailable" });
   }
 });
 
 // ---------------------------------------------------
-// IMPORT ROUTES
+// ROUTES
 // ---------------------------------------------------
 import authRoutes from "./routes/authRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
@@ -75,10 +92,8 @@ import imageRoutes from "./routes/imageRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import customOptionsRoutes from "./routes/customOptionsRoutes.js";
 import pdfRoutes from "./routes/pdfRoutes.js";
+import billRoutes from "./routes/billRoutes.js";
 
-// ---------------------------------------------------
-// ROUTING
-// ---------------------------------------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/valuations", valuationRoutes);
@@ -86,22 +101,23 @@ app.use("/api/images", imageRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/options", customOptionsRoutes);
 app.use("/api/pdf", pdfRoutes);
+app.use("/api/bills", billRoutes);
 
 // ---------------------------------------------------
-// ROOT PATH
+// ROOT
 // ---------------------------------------------------
 app.get("/", (req, res) => {
-  res.send("MERN Backend Running – Vercel Serverless Optimized");
+  res.send("🚀 MERN Backend Running – Production Optimized");
 });
 
 // ---------------------------------------------------
-// LOCAL SERVER (DEVELOPMENT ONLY)
+// LOCAL DEVELOPMENT SERVER
 // ---------------------------------------------------
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  app.listen(PORT, () =>
+    console.log(`Local Server: http://localhost:${PORT}`)
+  );
 }
 
 export default app;

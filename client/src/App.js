@@ -14,6 +14,9 @@ const LoginPage = lazy(() => import("./pages/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard"));
 const FormPage = lazy(() => import("./pages/valuationform"));
 const EditValuationPage = lazy(() => import("./pages/valuationeditform.jsx"));
+const BillsPage = lazy(() => import("./pages/billspage"));
+const BillForm = lazy(() => import("./components/BillForm"));
+const BillDetailPage = lazy(() => import("./pages/billdetailpage"));
 
 // Memoized loader component to prevent unnecessary re-renders
 const PageLoader = memo(() => (
@@ -210,6 +213,54 @@ function AppContent() {
                         <ProtectedRoute>
                             <Suspense fallback={<PageLoader />}>
                                 <EditValuationPage user={user} onLogin={handleLogin} />
+                            </Suspense>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Bills - Protected Route with Lazy Loading */}
+                <Route
+                    path="/bills"
+                    element={
+                        <ProtectedRoute>
+                            <Suspense fallback={<PageLoader />}>
+                                <BillsPage user={user} onLogin={handleLogin} />
+                            </Suspense>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Create Bill - Protected Route with Lazy Loading */}
+                <Route
+                    path="/bills/create"
+                    element={
+                        <ProtectedRoute>
+                            <Suspense fallback={<PageLoader />}>
+                                <BillForm user={user} onLogin={handleLogin} />
+                            </Suspense>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Edit Bill - Protected Route with Lazy Loading */}
+                <Route
+                    path="/bills/edit/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Suspense fallback={<PageLoader />}>
+                                <BillForm user={user} onLogin={handleLogin} />
+                            </Suspense>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* View Bill - Protected Route with Lazy Loading */}
+                <Route
+                    path="/bills/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Suspense fallback={<PageLoader />}>
+                                <BillDetailPage user={user} onLogin={handleLogin} />
                             </Suspense>
                         </ProtectedRoute>
                     }

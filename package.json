@@ -1,0 +1,12 @@
+{
+  "name": "valuation-pdf-generator",
+  "version": "1.0.0",
+  "description": "Generate exact PDF replica of valuation report",
+  "main": "generate_pdf.js",
+  "scripts": {
+    "start": "node generate_pdf.js"
+  },
+  "dependencies": {
+    "pdfkit": "^0.14.0"
+  }
+}
